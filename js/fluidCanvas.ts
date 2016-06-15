@@ -2,199 +2,247 @@
  * Created by isp on 4/9/16.
  */
 
-import {Shape, Circle} from "./Vectors/shapeInterfaces";
-import Vectors from './Vectors/points';
+import * as _ from 'lodash';
+
+import {Shapes, ShapeParameters, TransformObject} from "./Interfaces/shapeInterfaces";
+import Storage from './Storage/storage';
+import Geometry from './Geometry/shapes';
+import CircleGeometry from './Geometry/circle';
+import RectangleGeometry from './Geometry/rectangle';
+import PolygonGeometry from './Geometry/polygon';
+import LineGeometry from './Geometry/line';
+import BezierLineGeometry from './Geometry/bezierLine';
 import Render from './Render/render';
 import Animation from './Animation/animation';
-import {MAPPING, TRAJECTORY} from './Utils/globals';
-import {HELPER} from './Utils/helper';
-
-import LinearTrajectory = require('./Trajectory/linear');
-import LinearExpansionTrajectory = require('./Trajectory/linearExpansion');
+import {INTERPOLATION, SYSTEM_PARAMETERS, SHAPES_PARAMETERS, SHAPES, RENDER_SHAPES} from './Utils/globals';
+import LinearInterpolation from './Interpolation/linear';
+import EasingInterpolation from './Interpolation/easing';
+import BezierInterpolation from './Interpolation/bezier';
+import {InterpolationParameters} from './Interfaces/interpolationInterfaces';
 
 export default class FluidCanvas {
-    vectors: any;
+    storage: any;
+    geometry: any;
     renderer: any;
-    //storage: any;
     context: CanvasRenderingContext2D;
     constructor (context: CanvasRenderingContext2D) {
         this.context = context;
-        this.vectors = new Vectors();
+        this.storage = new Storage();
+        this.geometry = new Geometry();
         this.renderer = new Render(this.context);
-        //this.storage = new Storage();
     }
     
-    /*public setShape (shape: Shape): void {
-        let shapePoints = this.vectors.getPointsArray(shape);
+    public setPoints(shape: Shapes, parameters?: ShapeParameters): Shapes {
+        if (!shape) return;
 
-        this.storage.setShape(shape, shapePoints);
+        let shapeGeometry;
+        let interpolation;
+        let frames;
+        let tensionFactor;
+        let easing;
+        let params;
+        let renderType;
+        
+        if (parameters) {
+            interpolation = parameters.interpolationType || INTERPOLATION.noInterpolation;
+            frames = parameters.frames || SYSTEM_PARAMETERS.renderingInterpolationStep;
+            tensionFactor = parameters.tensionFactor || SHAPES_PARAMETERS.bezierTension;
+            easing = parameters.easing || INTERPOLATION.linearTween;
+            renderType = parameters.renderType || RENDER_SHAPES.line;
+        } else {
+            interpolation = INTERPOLATION.noInterpolation;
+            frames = SYSTEM_PARAMETERS.renderingInterpolationStep;
+            tensionFactor = SHAPES_PARAMETERS.bezierTension;
+            easing = INTERPOLATION.linearTween;
+            renderType = RENDER_SHAPES.line;
+        }
+
+        params = {
+            frames: frames,
+            tensionFactor: tensionFactor,
+            easing: easing
+        };
+        
+        switch (shape.type) {
+            case SHAPES.circle:
+                shapeGeometry = new CircleGeometry(params);
+                shapeGeometry.setPoints(shape, interpolation);
+                break;
+            case SHAPES.rectangle:
+                shapeGeometry = new RectangleGeometry(params);
+                shapeGeometry.setPoints(shape, interpolation);
+                break;
+            case SHAPES.polygon:
+                shapeGeometry = new PolygonGeometry(params);
+                shapeGeometry.setPoints(shape, interpolation);
+                break;
+            case SHAPES.line:
+                shapeGeometry = new LineGeometry(params);
+                shapeGeometry.setPoints(shape, interpolation);
+                break;
+            case SHAPES.bezierLine:
+                shapeGeometry = new BezierLineGeometry(params);
+                shapeGeometry.setPoints(shape, interpolation);
+        }
+
+        this.geometry.setPointsRenderState(shape, false);
+        this.geometry.setPointsRenderType(shape, renderType);
+
+        this.storage.setShape(shape);
+
+        return shape;
+    }
+
+    public getPoints() {
+        return this.storage.getShapes();
+    }
+
+    public defineCompositePoints(pointsArr: Array<Shapes>): Array<Shapes> {
+        return this.storage.defineCompositeShape(pointsArr);
+    }
+    
+    public transform (
+        startShape: Shapes,
+        endShape: Shapes,
+        interpolation: string,
+        parameters?: InterpolationParameters): TransformObject {
+        
+        let trajectoryPoints;
+        let newShape = _.clone(endShape);
+        
+        this.geometry.normalizePolygons(startShape, endShape);
+        this.geometry.resetPoints([startShape, endShape]);
+
+        switch (interpolation) {
+            default:
+            case INTERPOLATION.linear:
+                trajectoryPoints = parameters ?
+                    new LinearInterpolation(startShape, endShape, parameters) :
+                    new LinearInterpolation(startShape, endShape);
+                break;
+            case INTERPOLATION.easing:
+                trajectoryPoints = parameters ?
+                    new EasingInterpolation(startShape, endShape, parameters) : 
+                    new EasingInterpolation(startShape, endShape);
+                break;
+            case INTERPOLATION.bezier:
+                trajectoryPoints = parameters ?
+                    new BezierInterpolation(startShape, endShape, parameters) :
+                    new BezierInterpolation(startShape, endShape);
+        }
+
+        let iterator = trajectoryPoints.iterator();
+
+        this.storage.deleteShape(startShape.id);
+
+        newShape = this.setPoints(newShape);
+
+        this.storage.setTransformationIterator(newShape.id, iterator);
+
+        return {
+            shape: newShape,
+            iterator: iterator
+        };
+    }
+    
+    public animate (): void {
+        let shapes = this.storage.getShapes();
+        let iterators = this.storage.getTransformationIterators();
+
+        let animation = new Animation();
+        let callback =
+            this.animationCallback.bind(this, shapes, iterators);
+        let stop = this.animationStopCondition.bind(this);
+
+        animation.animate(callback, stop);
+    }
+
+    private animationCallback(
+        shapes: Map<any, any>, iterators: Map<any, any>) {
+
+        let self = this;
+
+        this.clear();
+
+        iterators.forEach(function(iterator, key) {
+            let nextArr = iterator.next().value;
+            let nextShape = shapes.get(key);
+            let test;
+
+            if (typeof nextArr !== 'undefined' && typeof nextShape !== 'undefined') {
+                nextShape.points = [];
+
+                for (let i = 0; i < nextArr.length; i++) {
+                    nextShape.points.push(nextArr[i]);
+                }
+
+                self.render(nextShape, nextShape.renderType);
+
+            } else {
+                self.geometry.setPointsRenderState(nextShape, true);
+
+                self.storage.deleteTransformationIterator(key);
+            }
+        });
+
+        shapes.forEach(function(shape, key) {
+            if (shape.isRendered) {
+                self.render(shape, shape.renderType);
+            }
+        });
+
+    }
+    
+    private animationStopCondition() {
+        return this.storage.getTransformationIterators().size === 0;
+    }
+    
+    /*public animate(
+        trajectoryIterators: Array<IterableIterator<Float32Array>>,
+        interpolationType: string): void {
+
+        let animation = new Animation(trajectoryIterators);
+        let self = this;
+        let lastArr = [];
+
+        let startCondition = function(): void {
+
+            arguments[1].isStop = true;
+
+            self.clear();
+
+            for (let i = 0; i < trajectoryIterators.length; i++) {
+                let nextArr = trajectoryIterators[i].next().value;
+
+                if (typeof nextArr !== 'undefined') {
+                    lastArr[i] = nextArr;
+
+                    self.renderer.render(nextArr, interpolationType);
+
+                    arguments[1].isStop = false;
+                } else {
+                    self.renderer.render(lastArr[i], interpolationType);
+                }
+            }
+        };
+
+        let stopCondition = function(): boolean {
+            return arguments[1].isStop;
+        };
+
+        animation.animate(
+            startCondition,
+            stopCondition
+        );
     }*/
 
-    public transform (startShape: Shape, 
-                      endShape: Shape, 
-                      trajectory: string, 
-                      type: string, 
-                      animate?: boolean): void {
-        
-        let points = this.mapPoints(startShape, endShape);
-        let startPoints = points[0];
-        let endPoints = points[1];
-        //let globalId;
+    public render (shape: Shapes, type: string): void {
+        this.renderer.render(shape, type);
 
-        /*let linearTransform = (startPoints: Float32Array,
-                               endPoints: Float32Array,
-                               angle: number): void => {
-
-            //while (!HELPER.isEqualArrays(startPoints, endPoints)) {
-                startPoints = LinearTrajectory(startPoints, angle);
-
-                HELPER.fitToEqual(startPoints, endPoints);
-
-                this.render(startShape, type, startPoints);
-            //}
-            console.log('test');
-
-            globalId = requestAnimationFrame(
-                () => {
-                    linearTransform(startPoints, endPoints, angle);
-                }
-            );
-
-            if (HELPER.isEqualArrays(startPoints, endPoints)) {
-                cancelAnimationFrame(globalId);
-            }
-        };*/
-        
-        switch (trajectory) {
-            default:
-            case TRAJECTORY.linear:
-                let width = Math.abs(startPoints[0] - endPoints[0]);
-                let height = Math.abs(startPoints[1] - endPoints[1]);
-                let theta = Math.atan(height / width);
-
-                let linearParameters = [startPoints, endPoints, theta];
-
-                let linearAnimation = new Animation(linearParameters);
-
-                let linearStartCondition = (startPoints: Float32Array,
-                                      endPoints: Float32Array,
-                                      angle: number): void => {
-
-                    startPoints = LinearTrajectory(startPoints, angle);
-
-                    linearParameters = [startPoints, endPoints, theta];
-
-                    linearAnimation.setNewParameters(linearParameters);
-
-                    HELPER.fitToEqual(startPoints, endPoints);
-                    this.render(startShape, type, startPoints);
-                };
-
-                let linearStopCondition = HELPER.isEqualArrays;
-
-                linearAnimation.animate(linearStartCondition, linearStopCondition);
-
-                //linearTransform(startPoints, endPoints, theta);
-
-                /*globalId = requestAnimationFrame(
-                    () => {
-                        linearTransform(startPoints, endPoints, theta);
-                    }
-                );*/
-                break;
-            case TRAJECTORY.linearExpansion:
-                /*let width = Math.abs(startPoints[0] - endPoints[0]);
-                let height = Math.abs(startPoints[1] - endPoints[1]);
-                let theta = Math.atan(height / width);*/
-
-                let angles = [];
-                let velocity = [];
-
-                for (let i = 0; i < startPoints.length; i++) {
-                    let width;
-                    let height;
-                    let distance;
-
-                    if (i % 2 === 0) {
-                        width = Math.abs(startPoints[i] - endPoints[i]);
-                        height = Math.abs(startPoints[i + 1] - endPoints[i + 1]);
-                        distance = Math.hypot(width, height);
-                        velocity.push(distance);
-                    } else {
-                        width = Math.abs(startPoints[i - 1] - endPoints[i - 1]);
-                        height = Math.abs(startPoints[i] - endPoints[i]);
-                        distance = Math.hypot(width, height);
-                        velocity.push(distance);
-                    }
-
-                    angles.push(Math.atan(height / width));
-                }
-
-                let linearExpansionParameters = [startPoints, endPoints, angles];
-
-                let linearExpansionAnimation = new Animation(linearExpansionParameters);
-
-                let linearExpansionStartCondition = (startPoints: Float32Array,
-                                      endPoints: Float32Array,
-                                      angles: Array<number>): void => {
-
-                    startPoints = LinearExpansionTrajectory(startPoints, angles, velocity);
-
-                    linearExpansionParameters = [startPoints, endPoints, angles];
-
-                    linearExpansionAnimation.setNewParameters(linearExpansionParameters);
-
-                    HELPER.fitToEqual(startPoints, endPoints);
-                    this.render(startShape, type, startPoints);
-                };
-
-                let linearExpansionStopCondition = HELPER.isEqualArrays;
-
-                linearExpansionAnimation.animate(
-                    linearExpansionStartCondition,
-                    linearExpansionStopCondition
-                );
-        }
+        this.geometry.setPointsRenderState(shape, true);
     }
-    
-    public render (shape: Shape, type: string, shapePointsArray?: Float32Array): void {
-        let shapePoints = shapePointsArray || this.vectors.getPointsArray(shape);
 
-        //this.clear();
-
-        this.renderer.render(shapePoints, type);
-    }
-    
     public clear () {
         this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
     }
-
-    private mapPoints (startShape: Shape, endShape: Shape): Array<Float32Array> {
-        let startPoints = this.vectors.getPointsArray(startShape);
-        let endPoints = this.vectors.getPointsArray(endShape);
-        let mappingType = this.mappingType(startShape, endShape);
-        
-        switch (mappingType) {
-            default:
-            case MAPPING.direct:
-                return [startPoints, endPoints];
-            break;
-        }
-    }
-
-    private mappingType (startShape: Shape, endShape: Shape): string {
-        let shapeType = MAPPING.direct;
-        
-        if (startShape.type === endShape.type) {
-            switch (startShape.type) {
-                case 'circle':
-                    shapeType = startShape.r > endShape.r ? MAPPING.directConstriction :
-                        startShape.r < endShape.r ? MAPPING.directExpansion :
-                            MAPPING.direct;
-            }
-        }
-        
-        return shapeType;
-    }
 }
-

@@ -14,7 +14,9 @@ export default class Animation {
     }
 
     animate (callback: Function, stopCondition: Function): void {
-        this.parameters ? callback(...this.parameters) : callback();
+        let self = this;
+        
+        this.parameters ? callback(...this.parameters, self) : callback(self);
 
         this.globalId = requestAnimationFrame(
             () => {
@@ -22,7 +24,7 @@ export default class Animation {
             }
         );
         
-        if (this.parameters ? stopCondition(...this.parameters) : stopCondition()) {
+        if (this.parameters ? stopCondition(...this.parameters, self) : stopCondition(self)) {
             cancelAnimationFrame(this.globalId);
         }
     }

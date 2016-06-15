@@ -1,37 +1,48 @@
 
+import {Shapes} from "./../Interfaces/shapeInterfaces";
+import {SHAPES_PARAMETERS, SHAPES, RENDER_SHAPES} from './../Utils/globals';
+
 import Rectangle = require('./Shapes/rectangle');
 import Line = require('./Shapes/line');
-import BezierCurve = require('./Shapes/bezierCurve');
-import CardinalSplines from './../Interpolation/cardinalSplines';
 
 export default class Render {
     context: CanvasRenderingContext2D;
-    interpolationCardinal: any;
     constructor(context: CanvasRenderingContext2D) {
         this.context = context;
-        this.interpolationCardinal = new CardinalSplines(context);
     }
 
-    render(points: Float32Array, type: string) {
+    public render(shape: Shapes, type: string): void {
         this.context.beginPath();
 
         switch (type) {
-            case 'point':
-                Rectangle(this.context, points, 2, 2);
-                this.context.fill();
-                this.context.stroke();
+            case RENDER_SHAPES.point:
+                Rectangle(this.context, shape.points,
+                    SHAPES_PARAMETERS.pointWidth, SHAPES_PARAMETERS.pointHeight);
+                this.style(shape);
                 break;
-            case 'line':
-                Line(this.context, points);
-                this.context.fill();
-                this.context.stroke();
+            case RENDER_SHAPES.line:
+                Line(this.context, shape.points);
+                this.style(shape);
                 break;
-            case 'bezierCurve':
-                BezierCurve(this.context, points, this.interpolationCardinal);
+        }
+    }
+
+    private style(shape: Shapes) {
+        if (shape.style) {
+            if (shape.style.color) {
+                this.context.fillStyle = shape.style.color;
+                this.context.strokeStyle = shape.style.color;
+            }
+            if (shape.style.isFill) {
                 this.context.fill();
+            }
+            if (shape.style.isStroke || !shape.style.isFill ||
+                shape.type === SHAPES.line ||  shape.type === SHAPES.bezierLine) {
                 this.context.stroke();
-                break;
-                
+            }
+        } else {
+            this.context.fillStyle = SHAPES_PARAMETERS.baseColor;
+            this.context.stroke();
         }
     }
 }

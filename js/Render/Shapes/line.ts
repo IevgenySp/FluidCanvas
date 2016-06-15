@@ -19,12 +19,4 @@ export = (context: CanvasRenderingContext2D,
     }
 
     context.lineTo(firstX, firstY);
-
-    /*context.moveTo(points[0][0], points[0][1]);
-
-    for (let i = 0; i < points.length; i++) {
-        if (i !== 0) {
-            context.lineTo(points[i][0], points[i][1]);
-        }
-    }*/
 };

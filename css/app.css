@@ -32,6 +32,7 @@ canvas.animizer-canvas-main {
     position: absolute;
     overflow: hidden;
     z-index: 3;
+    margin-top: 30px;
 }
 
 canvas.animizer-canvas-second {
@@ -39,6 +40,7 @@ canvas.animizer-canvas-second {
     position: absolute;
     overflow: hidden;
     z-index: 2;
+    margin-top: 30px;
 }
 
 canvas.animizer-canvas-hover {
@@ -46,4 +48,11 @@ canvas.animizer-canvas-hover {
     position: absolute;
     overflow: hidden;
     z-index: 1;
+    margin-top: 30px;
+}
+
+div.buttons {
+    width: 300px;
+    position: absolute;
+    margin: 5px;
 }

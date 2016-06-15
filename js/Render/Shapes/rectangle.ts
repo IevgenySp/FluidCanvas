@@ -7,7 +7,7 @@ export = (context: CanvasRenderingContext2D,
            width: number, 
            height: number,
            centerPoint?: string): void => {
-
+    
     let center = centerPoint || 'center';
     let eArr = points[Symbol.iterator]();
     let counter = 0;
@@ -25,16 +25,4 @@ export = (context: CanvasRenderingContext2D,
                 break;
         }
     }
-
-    /*for (let entry of points) {
-        switch (center) {
-            case 'center':
-                let x = entry[0] - width / 2;
-                let y = entry[1] - height / 2;
-
-                context.lineWidth = 1;
-                context.rect(x, y, width, height);
-                break;
-        }
-    }*/
 };
