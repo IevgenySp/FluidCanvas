@@ -19,19 +19,28 @@ import LinearInterpolation from './Interpolation/linear';
 import EasingInterpolation from './Interpolation/easing';
 import BezierInterpolation from './Interpolation/bezier';
 import {InterpolationParameters} from './Interfaces/interpolationInterfaces';
+import Constructor from './Constructor/shapesConstructor';
 
 export default class FluidCanvas {
     storage: any;
     geometry: any;
     renderer: any;
+    shapesConstructor: any;
     context: CanvasRenderingContext2D;
     constructor (context: CanvasRenderingContext2D) {
         this.context = context;
         this.storage = new Storage();
         this.geometry = new Geometry();
         this.renderer = new Render(this.context);
+        this.shapesConstructor = new Constructor();
     }
-    
+
+    /**
+     * Main method to create shape points geometry and place shape into storage
+     * @param shape
+     * @param parameters
+     * @returns {Shapes}
+     */
     public setPoints(shape: Shapes, parameters?: ShapeParameters): Shapes {
         if (!shape) return;
 
@@ -42,7 +51,7 @@ export default class FluidCanvas {
         let easing;
         let params;
         let renderType;
-        
+
         if (parameters) {
             interpolation = parameters.interpolationType || INTERPOLATION.noInterpolation;
             frames = parameters.frames || SYSTEM_PARAMETERS.renderingInterpolationStep;
@@ -62,7 +71,7 @@ export default class FluidCanvas {
             tensionFactor: tensionFactor,
             easing: easing
         };
-        
+
         switch (shape.type) {
             case SHAPES.circle:
                 shapeGeometry = new CircleGeometry(params);
@@ -93,23 +102,40 @@ export default class FluidCanvas {
         return shape;
     }
 
+    /**
+     * Get all available points
+     * @returns {Map<string, Shapes>}
+     */
     public getPoints() {
         return this.storage.getShapes();
     }
 
+    /**
+     * Set same id for group of shapes points
+     * @param pointsArr
+     * @returns {any}
+     */
     public defineCompositePoints(pointsArr: Array<Shapes>): Array<Shapes> {
         return this.storage.defineCompositeShape(pointsArr);
     }
-    
+
+    /**
+     * Get coordinates to transform/move shape into another position/shape
+     * @param startShape
+     * @param endShape
+     * @param interpolation
+     * @param parameters
+     * @returns {{shape: Shapes, iterator: any}}
+     */
     public transform (
         startShape: Shapes,
         endShape: Shapes,
         interpolation: string,
         parameters?: InterpolationParameters): TransformObject {
-        
+
         let trajectoryPoints;
         let newShape = _.clone(endShape);
-        
+
         this.geometry.normalizePolygons(startShape, endShape);
         this.geometry.resetPoints([startShape, endShape]);
 
@@ -122,7 +148,7 @@ export default class FluidCanvas {
                 break;
             case INTERPOLATION.easing:
                 trajectoryPoints = parameters ?
-                    new EasingInterpolation(startShape, endShape, parameters) : 
+                    new EasingInterpolation(startShape, endShape, parameters) :
                     new EasingInterpolation(startShape, endShape);
                 break;
             case INTERPOLATION.bezier:
@@ -144,7 +170,10 @@ export default class FluidCanvas {
             iterator: iterator
         };
     }
-    
+
+    /**
+     * Animate points transformation
+     */
     public animate (): void {
         let shapes = this.storage.getShapes();
         let iterators = this.storage.getTransformationIterators();
@@ -157,6 +186,11 @@ export default class FluidCanvas {
         animation.animate(callback, stop);
     }
 
+    /**
+     * Condition to start animation
+     * @param shapes
+     * @param iterators
+     */
     private animationCallback(
         shapes: Map<any, any>, iterators: Map<any, any>) {
 
@@ -166,8 +200,7 @@ export default class FluidCanvas {
 
         iterators.forEach(function(iterator, key) {
             let nextArr = iterator.next().value;
-            let nextShape = shapes.get(key);
-            let test;
+            let nextShape: any = shapes.get(key);
 
             if (typeof nextArr !== 'undefined' && typeof nextShape !== 'undefined') {
                 nextShape.points = [];
@@ -192,57 +225,38 @@ export default class FluidCanvas {
         });
 
     }
-    
+
+    /**
+     * Condition to stop animation
+     * @returns {boolean}
+     */
     private animationStopCondition() {
         return this.storage.getTransformationIterators().size === 0;
     }
-    
-    /*public animate(
-        trajectoryIterators: Array<IterableIterator<Float32Array>>,
-        interpolationType: string): void {
 
-        let animation = new Animation(trajectoryIterators);
-        let self = this;
-        let lastArr = [];
-
-        let startCondition = function(): void {
-
-            arguments[1].isStop = true;
-
-            self.clear();
-
-            for (let i = 0; i < trajectoryIterators.length; i++) {
-                let nextArr = trajectoryIterators[i].next().value;
-
-                if (typeof nextArr !== 'undefined') {
-                    lastArr[i] = nextArr;
-
-                    self.renderer.render(nextArr, interpolationType);
-
-                    arguments[1].isStop = false;
-                } else {
-                    self.renderer.render(lastArr[i], interpolationType);
-                }
-            }
-        };
-
-        let stopCondition = function(): boolean {
-            return arguments[1].isStop;
-        };
-
-        animation.animate(
-            startCondition,
-            stopCondition
-        );
-    }*/
-
+    /**
+     * Render shape, possible render primitives: line, point
+     * @param shape
+     * @param type
+     */
     public render (shape: Shapes, type: string): void {
         this.renderer.render(shape, type);
 
         this.geometry.setPointsRenderState(shape, true);
     }
 
+    /**
+     * Clear canvas
+     */
     public clear () {
         this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
+    }
+
+    /**
+     * Provide instance of shapes constructor
+     * @returns {any}
+     */
+    public getShapesConstructor(): any {
+        return this.shapesConstructor;
     }
 }

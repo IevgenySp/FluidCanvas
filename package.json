@@ -8,28 +8,24 @@
     "type": "git",
     "url": "https://github.com/IevgenySp/FluidCanvas.git"
   },
-  "main": "index.ts",
+  "main": "bundle.js",
   "dependencies": {
-    "jquery": "2.1.4",
     "lodash": "^3.10.1",
     "typescript": "^1.8.10"
   },
   "devDependencies": {
-    "babel-plugin-add-module-exports": "^0.1.2",
-    "babel-preset-es2015": "^6.1.18",
-    "babel-preset-react": "^6.1.18",
-    "babelify": "^7.2.0",
     "browserify": "^6.2.0",
     "core-js": "^2.1.0",
     "envify": "^3.0.0",
-    "esdoc": "^0.4.3",
     "grunt": "^0.4.5",
     "grunt-browserify": "^4.0.1",
+    "grunt-typedoc": "^0.2.4",
     "jest-cli": "^0.4.3",
     "jit-grunt": "^0.9.1",
     "observe-js": "^0.5.7",
     "promise": "^7.1.1",
     "tsify": "^0.13.2",
+    "typedoc": "^0.4.3",
     "uglify-js": "~2.4.15",
     "uglifyify": "^3.0.1",
     "watchify": "^2.1.1"

@@ -112,7 +112,6 @@ export default class ShapesGeometry implements ShapePoints {
     }
     
     public resetPoints(shapes: Array<Shapes>, interpolationType: string): Array<Shapes> {
-        
         for (let i = 0; i < shapes.length; i++) {
             shapes[i].geometry.resetPoint(shapes[i]);
         }

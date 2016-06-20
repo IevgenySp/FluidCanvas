@@ -6,6 +6,8 @@ module.exports = function(grunt) {
     //Load all Grunt Plugins, only when you need them.
     require('jit-grunt')(grunt);
 
+    grunt.loadNpmTasks('grunt-typedoc');
+
     grunt.initConfig({
         dirs: {
             dts:  'dts',
@@ -17,15 +19,24 @@ module.exports = function(grunt) {
                 browserifyOptions: {
                     plugin: ['tsify'],
                     debug: true
-                },
-                transform: ['babelify']
+                }
             },
-            'watch-animizer': {
+            'watch': {
                 src: ['<%=dirs.dts%>/*.d.ts', './index.ts'],
-                dest: '<%= dirs.dist %>bundle.js',
+                dest: '<%= dirs.dist %>fcanvas.js',
                 options: {
                     watch: true,
                     keepAlive: true,
+                    browserifyOptions: {
+                        plugin: ['tsify'],
+                        debug: true
+                    }
+                }
+            },
+            'examples': {
+                src: ['<%=dirs.dts%>/*.d.ts', './Examples/index.ts'],
+                dest: '<%= dirs.dist %>/Examples/index.js',
+                options: {
                     browserifyOptions: {
                         plugin: ['tsify'],
                         debug: true
@@ -35,27 +46,41 @@ module.exports = function(grunt) {
         },
 
         uglify: {
-            'animizer': {
+            'main': {
                 files: [
-                    {src: '<%= dirs.dist %>bundle.js',
-                        dest: '<%= dirs.dist %>/undle.js'}
+                    {src: '<%= dirs.dist %>fcanvas.js',
+                        dest: '<%= dirs.dist %>fcanvas.minified.js'}
                 ]
             }
         },
 
-        watch: {
-            'babel': {
-                files: [
-                    '**/*.es6'
-                ],
-                tasks: [
-                    'babel:dist'
-                ]
+        typedoc: {
+            build: {
+                options: {
+                    module: 'commonjs',
+                    out: './docs',
+                    name: 'FluidCanvas',
+                    target: 'es5',
+                    ignoreCompilerErrors: true
+                },
+                src: ['./js/**/*']
             }
         }
     });
 
     grunt.registerTask('dev', [
-        'browserify:watch-animizer'
+        'browserify:watch'
+    ]);
+
+    grunt.registerTask('dev-uglify', [
+        'uglify:main'
+    ]);
+
+    grunt.registerTask('dev-examples', [
+        'browserify:examples'
+    ]);
+
+    grunt.registerTask('dev-typedoc', [
+        'typedoc:build'
     ]);
 };

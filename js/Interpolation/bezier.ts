@@ -128,7 +128,6 @@ export default class BezierInterpolation extends Interpolation {
                 //store points in array
                 bezierPoints.push(x);
                 bezierPoints.push(y);
-
             }
         }
         
