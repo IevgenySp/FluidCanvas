@@ -29,6 +29,12 @@ export default class Storage {
         
         this.setShapeId(shape);
 
+        if (shape.childs) {
+            shape.childs.forEach(function(child: Shapes) {
+                child.id = child.id.split(':')[0] + ':' + shape.id;
+            });
+        }
+
         this.shapes.set(shape.id, shape);
         
         this.incrementId();
@@ -55,9 +61,7 @@ export default class Storage {
     }
     
     public resetShape(shapeId: string, newShape: Shapes): void {
-        let key = this.shapes.get(shapeId);
-        
-        this.shapes.set(key, newShape);
+        this.shapes.set(shapeId, newShape);
     }
     
     public deleteShape(shapeId: string): void {
@@ -82,5 +86,12 @@ export default class Storage {
 
     public setShapeCompositeId(shape: Shapes): void {
         shape.compositeId = this.compositeId;
+    }
+
+    public clearShapes(): void {
+        this.id = 0;
+        this.compositeId = 0;
+
+        this.shapes.clear();
     }
 }

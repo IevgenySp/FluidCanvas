@@ -3,7 +3,7 @@
  */
 
 import {Circle, Rectangle, Polygon} from "../Interfaces/shapeInterfaces";
-import {InterpolationInterface, InterpolationIterator} from './../Interfaces/interpolationInterfaces';
+import {InterpolationInterface, InterpolationIterator, InterpolationParameters} from './../Interfaces/interpolationInterfaces';
 import {HELPER} from './../Utils/helper';
 
 type Shapes = Circle | Rectangle | Polygon;
@@ -11,9 +11,19 @@ type Shapes = Circle | Rectangle | Polygon;
 export default class Interpolation implements InterpolationIterator {
     sShape: Shapes;
     eShape: Shapes;
-    constructor(startShape: Shapes, endShape?: Shapes) {
-        this.sShape = startShape;
-        this.eShape = endShape ? endShape : startShape;
+    params: InterpolationParameters;
+    constructor(shapes: Array<Shapes>, parameters?: InterpolationParameters) {
+        this.sShape = shapes[0];
+       
+        if (shapes[1]) {
+           this.eShape = shapes[1];
+        }
+        
+        if (parameters) {
+            this.params = parameters;
+        } else {
+            
+        }
     };
 
     public iterator(): IterableIterator<Float32Array> {

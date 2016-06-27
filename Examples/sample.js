@@ -14,9 +14,9 @@ var constructor = fluidCanvas.getShapesConstructor();
 var bar = constructor.getRectangle(50, 50, 70, 150);
 var circle = constructor.getCircle(215, 40, 200, 200);
 
-fluidCanvas.setPoints(bar);
-fluidCanvas.setPoints(circle);
+fluidCanvas.defineShape(bar);
+fluidCanvas.defineShape(circle);
 
-fluidCanvas.transform(bar, circle);
+fluidCanvas.transform([bar], [circle]);
 
 fluidCanvas.animate();

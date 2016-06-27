@@ -13,7 +13,7 @@ export default class Render {
 
     public render(shape: Shapes, type: string): void {
         this.context.beginPath();
-
+        
         switch (type) {
             case RENDER_SHAPES.point:
                 Rectangle(this.context, shape.points,

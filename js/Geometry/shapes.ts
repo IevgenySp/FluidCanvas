@@ -3,11 +3,16 @@
  */
 
 import {Shapes, Bezier, ShapePoints} from "./../Interfaces/shapeInterfaces";
-import {SYSTEM_PARAMETERS, SHAPES} from "./../Utils/globals";
+import {INTERPOLATION, SYSTEM_PARAMETERS, SHAPES_PARAMETERS, SHAPES, RENDER_SHAPES, INTERPOLATION_STEP} from './../Utils/globals';
 import {HELPER} from './../Utils/helper';
 
 export default class ShapesGeometry implements ShapePoints {
-    constructor() {}
+    params: any;
+    constructor(parameters?: any) {
+        this.params = parameters? 
+            ShapesGeometry.initParameters(parameters) : 
+            ShapesGeometry.initParameters();
+    }
 
     public shapeSidesCoef(shape: Shapes): number {
         let sidesCoef = 1;
@@ -52,18 +57,16 @@ export default class ShapesGeometry implements ShapePoints {
             case SHAPES.line:
                 // shape.pnts.length not divided by 2 since same amount
                 // of reversed points for contour will be added
-                optimizedPolygons = shape.points ? shape.points.length : shape.polygons ?
+                optimizedPolygons = shape.points ? shape.points.length / 2 : shape.polygons ?
                     Math.max(shape.polygons, shape.pnts.length) :
                     shape.pnts.length;
                 break;
             case SHAPES.bezierLine:
                 // shape.pnts.length not divided by 2 since same amount
                 // of reversed points for contour will be added
-            // TODO normalize SHAPES_PARAMETERS.bezierSegmentsNumber and SYSTEM_PARAMETERS.renderingInterpolationStep parameters
-            /*optimizedPolygons = (shape.pnts.length - 1) *
-                    (SHAPES_PARAMETERS.bezierSegmentsNumber + 1);*/
-                optimizedPolygons = shape.points ? shape.points.length : (shape.pnts.length - 1) *
-                    (SYSTEM_PARAMETERS.renderingInterpolationStep + 1)
+                // TODO normalize SHAPES_PARAMETERS.bezierSegmentsNumber and SYSTEM_PARAMETERS.renderingInterpolationStep parameters
+                optimizedPolygons = shape.points ? shape.points.length / 2 : (shape.pnts.length - 1) *
+                    (SYSTEM_PARAMETERS.interpolationPointsPerSegment + 1)
         }
 
         return optimizedPolygons;
@@ -79,7 +82,7 @@ export default class ShapesGeometry implements ShapePoints {
             let eShapeSides = this.shapeSidesCoef(endShape);
             let nPolygons = HELPER.commonMultiple(
                 startShape.polygons, endShape.polygons, sShapeSides, eShapeSides);
-
+            
             startShape.polygons = endShape.polygons = nPolygons;
         }
     }
@@ -103,10 +106,10 @@ export default class ShapesGeometry implements ShapePoints {
             (<Bezier>endShape).bezierSegmentsNumber = nPolygons / eShapeSides - 1;
         }
     }
-    
+
     public setPoints(shape: Shapes, interpolation: string): Shapes {
         
-        // Method should be implementaed in child classes
+        // Method should be implemented in child classes
         
         return shape;
     }
@@ -119,6 +122,31 @@ export default class ShapesGeometry implements ShapePoints {
         return shapes;
     }
 
+    private static initParameters (parameters?: any): any {
+        let params = {
+            frames:                        SYSTEM_PARAMETERS.frames,
+            startFrame:                    SYSTEM_PARAMETERS.startFrame,
+            bezierTensionFactor:           SHAPES_PARAMETERS.bezierTension,
+            interpolationPointsPerSegment: SYSTEM_PARAMETERS.interpolationPointsPerSegment,
+            xEasing:                       INTERPOLATION.linearTween,
+            yEasing:                       INTERPOLATION.linearTween,
+            easingType:                    INTERPOLATION_STEP.linear,
+            interpolationType:             INTERPOLATION.noInterpolation
+        };
+
+        for (let key in params) {
+            if (parameters) {
+                if(params.hasOwnProperty(key)) {
+                    if (parameters[key]) {
+                        params[key] = parameters[key];
+                    }
+                }
+            }
+        }
+
+        return params;
+    }
+    
     public setPointsRenderState(shape: Shapes, state: boolean): void {
         if (!shape) return;
 

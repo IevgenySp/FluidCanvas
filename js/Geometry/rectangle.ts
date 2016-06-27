@@ -11,20 +11,22 @@ import BezierInterpolation from './../Interpolation/bezier';
 import EasingInterpolation from './../Interpolation/easing';
 
 export default class RectangleGeometry extends ShapesGeometry {
-    tensionFactor: number;
-    frames: number;
-    easing: string;
+    tensionFactor:                 number;
+    interpolationPointsPerSegment: number;
+    easingType:                    string;
+    interpolationType:             string;
     constructor(parameters: ShapeParameters) {
-        super();
+        super(parameters);
 
-        this.tensionFactor = parameters.tensionFactor;
-        this.frames = parameters.frames;
-        this.easing = parameters.easing;
+        this.tensionFactor                 = parameters.bezierTensionFactor;
+        this.interpolationPointsPerSegment = parameters.interpolationPointsPerSegment;
+        this.easingType                    = parameters.easingType;
+        this.interpolationType             = parameters.interpolationType;
     }
 
-    public setPoints(shape: Shapes, interpolation: string): Shapes {
+    public setPoints(shape: Shapes): Shapes {
         
-        switch (interpolation) {
+        switch (this.interpolationType) {
             case INTERPOLATION.noInterpolation:
                 shape.polygons = this.setPolygons(shape);
                 shape.points = this.setPointToBuffer(
@@ -47,7 +49,7 @@ export default class RectangleGeometry extends ShapesGeometry {
         }
 
         shape.polygons = this.setPolygons(shape);
-        shape.interpolation = interpolation;
+        shape.interpolation = this.interpolationType;
         shape.geometry = this;
 
         return shape;
@@ -86,7 +88,7 @@ export default class RectangleGeometry extends ShapesGeometry {
     public linearIntPoints (shape: Shapes): Array<number> {
         let lineVectors = [];
 
-        let lInt = new LinearInterpolation(shape);
+        let lInt = new LinearInterpolation([shape], this.params);
 
         let keyPoints = this.linearPoints(shape);
         let rectPoints = [];
@@ -133,14 +135,14 @@ export default class RectangleGeometry extends ShapesGeometry {
         let basePoints = this.linearPoints(shape);
         let trajectoryPoints = [];
         let points;
-
-        let bInt = new BezierInterpolation(shape);
+        
+        let bInt = new BezierInterpolation([shape], this.params);
 
         for (let i = 0; i < basePoints.length - 2; i+=2) {
             let vecA = [basePoints[i], basePoints[i+1]];
             let vecB = [basePoints[i+2], basePoints[i+3]];
 
-            points = bInt.bezierInterpolation(vecA, vecB, this.frames, this.tensionFactor);
+            points = bInt.bezierInterpolation(vecA, vecB, this.interpolationPointsPerSegment, this.tensionFactor);
 
             trajectoryPoints.push(points);
         }
@@ -148,7 +150,7 @@ export default class RectangleGeometry extends ShapesGeometry {
         let vecA = [basePoints[basePoints.length - 2], basePoints[basePoints.length - 1]];
         let vecB = [basePoints[0], basePoints[1]];
 
-        points = bInt.bezierInterpolation(vecA, vecB, this.frames, this.tensionFactor);
+        points = bInt.bezierInterpolation(vecA, vecB, this.interpolationPointsPerSegment, this.tensionFactor);
 
         trajectoryPoints.push(points);
 
@@ -162,14 +164,14 @@ export default class RectangleGeometry extends ShapesGeometry {
         
         let frames = (shape.polygons - basePoints.length / 2) / this.shapeSidesCoef(shape);
 
-        let eInt = new EasingInterpolation(shape);
+        let eInt = new EasingInterpolation([shape], this.params);
 
         for (let i = 0; i < basePoints.length - 2; i+=2) {
             let vecA = [basePoints[i], basePoints[i+1]];
             let vecB = [basePoints[i+2], basePoints[i+3]];
 
             points = eInt.easingInterpolation(vecA, vecB, 0, frames,
-                eInt[this.easing], eInt[this.easing]);
+                eInt[this.easingType], eInt[this.easingType]);
 
             trajectoryPoints.push(points);
         }
@@ -179,7 +181,7 @@ export default class RectangleGeometry extends ShapesGeometry {
 
         if (frames > 0) {
             points = eInt.easingInterpolation(vecA, vecB, 0, frames,
-                eInt[this.easing], eInt[this.easing]);
+                eInt[this.easingType], eInt[this.easingType]);
         } else {
             points = basePoints;
         }

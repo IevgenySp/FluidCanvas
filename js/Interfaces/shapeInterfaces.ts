@@ -13,6 +13,8 @@ export interface Shape {
     compositeId?: number;
     isRendered?: boolean;
     renderType?: string;
+    parent?: Shape;
+    childs?: Array<Shape>;
 }
 
 export interface Circle extends Shape {
@@ -49,9 +51,9 @@ export interface ShapePoints {
 
 export interface ShapeParameters {
     interpolationType?: string;
-    tensionFactor?: number;
-    frames?: number;
-    easing?: string;
+    bezierTensionFactor?: number;
+    interpolationPointsPerSegment?: number;
+    easingType?: string;
     renderType?: string;
 }
 

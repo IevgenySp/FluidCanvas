@@ -12,8 +12,8 @@ type Shapes = Circle | Rectangle | Polygon;
 
 export default class LinearInterpolation extends Interpolation {
     frames: number;
-    constructor(startShape: Shapes, endShape?: Shapes, parameters?: InterpolationParameters) {
-        super(startShape, endShape);
+    constructor(shapes: Array<Shapes>, parameters: InterpolationParameters) {
+        super(shapes, parameters);
 
         if (parameters) {
             this.frames = parameters.frames || SYSTEM_PARAMETERS. frames;
@@ -82,9 +82,10 @@ export default class LinearInterpolation extends Interpolation {
 
         let vecLen = HELPER.getVectorLength(vecA[0], vecA[1], vecB[0], vecB[1]);
         let d = vecLen / (frames + 1);
+        let step = vecLen > 0 ? (d * stepNumber) / vecLen : vecLen;
         
         let vecDif = HELPER.getVectorDiff(vecB, vecA);
-        let vecMultiply = HELPER.vecConstMultiply(vecDif, (d * stepNumber) / vecLen);
+        let vecMultiply = HELPER.vecConstMultiply(vecDif, step);
 
         return HELPER.vecSum(vecMultiply, vecA);
     }

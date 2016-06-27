@@ -3,10 +3,9 @@
  */
 
 import Interpolation from './interpolation';
-import {SYSTEM_PARAMETERS, INTERPOLATION} from "./../Utils/globals";
 import {Circle, Rectangle, Polygon} from "../Interfaces/shapeInterfaces";
 import {InterpolationParameters} from './../Interfaces/interpolationInterfaces';
-import {HELPER} from './../Utils/helper';
+import {INTERPOLATION_STEP} from './../Utils/globals';
 
 type Shapes = Circle | Rectangle | Polygon;
 
@@ -15,26 +14,15 @@ export default class easingInterpolation extends Interpolation {
     yEasing: string;
     startFrame: number; 
     frames: number;
-    constructor(startShape: Shapes, endShape?: Shapes, parameters?: InterpolationParameters) {
-        super(startShape, endShape);
-        
-        if (parameters) {
-            this.xEasing = parameters.xEasing ?
-                HELPER.hasValue(INTERPOLATION, parameters.xEasing) !== null ?
-                parameters.xEasing : INTERPOLATION.linearTween : INTERPOLATION.linearTween;
+    easingType: string;
+    constructor(shapes: Array<Shapes>, parameters: InterpolationParameters) {
+        super(shapes, parameters);
 
-            this.yEasing = parameters.yEasing ?
-                HELPER.hasValue(INTERPOLATION, parameters.yEasing) !== null ?
-                    parameters.yEasing : INTERPOLATION.linearTween : INTERPOLATION.linearTween;
-
-            this.startFrame = parameters.startFrame || SYSTEM_PARAMETERS.startFrame;
-            this.frames = parameters.frames || SYSTEM_PARAMETERS. frames;
-        } else {
-            this.xEasing = INTERPOLATION.linearTween;
-            this.yEasing = INTERPOLATION.linearTween;
-            this.startFrame = SYSTEM_PARAMETERS.startFrame;
-            this.frames = SYSTEM_PARAMETERS. frames;
-        }
+        this.xEasing    = parameters.xEasing;
+        this.yEasing    = parameters.yEasing;
+        this.startFrame = parameters.startFrame;
+        this.frames     = parameters.frames;
+        this.easingType = parameters.easingType;
     }
 
     public iterator(): IterableIterator<Float32Array> {
@@ -82,9 +70,19 @@ export default class easingInterpolation extends Interpolation {
         xEasing: (t: number, b: number, c: number, d: number) => number,
         yEasing: (t: number, b: number, c: number, d: number) => number): Array<Array<number>> {
 
-        let xPoints = this.coordinateEasing(vectorStart[0], vectorEnd[0], startFrame, frames, xEasing);
-        let yPoints = this.coordinateEasing(vectorStart[1], vectorEnd[1], startFrame, frames, yEasing);
+        let xPoints;
+        let yPoints;
         let concatPoints = [];
+
+        if (this.easingType === INTERPOLATION_STEP.linear) {
+            xPoints = this.coordinateLinearEasing(vectorStart[0], vectorEnd[0], startFrame, frames, xEasing);
+            yPoints = this.coordinateLinearEasing(vectorStart[1], vectorEnd[1], startFrame, frames, yEasing);
+        }
+
+        if (this.easingType === INTERPOLATION_STEP.time) {
+            xPoints = this.coordinateTimeEasing(vectorStart[0], vectorEnd[0], startFrame, frames, xEasing);
+            yPoints = this.coordinateTimeEasing(vectorStart[1], vectorEnd[1], startFrame, frames, yEasing);
+        }
 
         for (let i = 0; i < xPoints.length; i++) {
             concatPoints.push(xPoints[i]);
@@ -94,7 +92,7 @@ export default class easingInterpolation extends Interpolation {
         return concatPoints;
     }
 
-    public coordinateEasing(
+    public coordinateLinearEasing(
         startCoord: number,
         endCoord: number,
         startFrame: number,
@@ -116,6 +114,25 @@ export default class easingInterpolation extends Interpolation {
 
             points.push(point);
         }
+
+        return points;
+    }
+
+    public coordinateTimeEasing(
+        startCoord: number,
+        endCoord: number,
+        startTime: number,
+        time: number,
+        easing: (t: number, b: number, c: number, d: number) => number): Array<number> {
+
+        let points = [];
+
+        let t = startTime;
+        let b = startCoord;
+        let c = endCoord - startCoord;
+        let d = time;
+
+        points.push(easing(t, b, c, d));
 
         return points;
     }

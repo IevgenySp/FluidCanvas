@@ -8,7 +8,7 @@ import FluidCanvas from './../js/fluidCanvas';
 
 let canvas: any = document.getElementsByClassName("animizer-canvas-main")[0];
 canvas.width = 1000;
-canvas.height = 1000;
+canvas.height = 300;
 let context = canvas.getContext('2d');
 
 let fluidCanvas = new FluidCanvas(context);
@@ -46,6 +46,14 @@ let linesParams = [
     [270, 150, 295, 50, 320, 120]
 ];
 
+let lineFlatParams = [
+    50, 50, 75, 75, 105, 100,
+    105, 100, 130, 20, 160, 170,
+    160, 170, 175, 80, 215, 10,
+    215, 10, 230, 60, 270, 150,
+    270, 150, 295, 50, 320, 120
+];
+
 let polygons = 50;
 
 let colors = ['#006E90', '#F18F01', '#ADCAD6', '#99C24D', '#41BBD9'];
@@ -70,7 +78,7 @@ function buildBars(params, polygons) {
         constructor.setStyle(bar, 'color', colors[i]);
         constructor.setStyle(bar, 'isFill', true);
 
-        shape = fluidCanvas.setPoints(bar,
+        shape = fluidCanvas.defineShape(bar,
             {renderType: 'line', interpolationType: 'noInterpolation'});
 
         fluidCanvas.storage.setShapeCompositeId(shape);
@@ -97,7 +105,7 @@ function buildCircles(params, polygons) {
         constructor.setStyle(circle, 'color', colors[i]);
         constructor.setStyle(circle, 'isFill', true);
 
-        shape = fluidCanvas.setPoints(circle,
+        shape = fluidCanvas.defineShape(circle,
             {renderType: 'line', interpolationType: 'noInterpolation'});
 
         fluidCanvas.storage.setShapeCompositeId(shape);
@@ -121,7 +129,7 @@ function buildLines(params, polygons) {
         constructor.setStyle(line, 'isFill', true);
         constructor.setStyle(line, 'isStroke', true);
 
-        shape = fluidCanvas.setPoints(line,
+        shape = fluidCanvas.defineShape(line,
             {renderType: 'line', interpolationType: 'noInterpolation'});
 
         fluidCanvas.storage.setShapeCompositeId(shape);
@@ -145,8 +153,8 @@ function buildBezierLines(params, polygons) {
         constructor.setStyle(line, 'isFill', true);
         constructor.setStyle(line, 'isStroke', true);
 
-        shape = fluidCanvas.setPoints(line,
-            {renderType: 'bezier', interpolationType: 'noInterpolation'});
+        shape = fluidCanvas.defineShape(line,
+            {renderType: 'line', interpolationType: 'noInterpolation'});
 
         fluidCanvas.storage.setShapeCompositeId(shape);
 
@@ -158,13 +166,25 @@ function buildBezierLines(params, polygons) {
     return shapes;
 }
 
+function buildLine(params, polygons) {
+    let line = constructor.getLine(params, polygons);
+
+    constructor.setStyle(line, 'color', colors[0]);
+    constructor.setStyle(line, 'isFill', true);
+    constructor.setStyle(line, 'isStroke', true);
+
+    return fluidCanvas.defineShape(line,
+        {renderType: 'line', interpolationType: 'noInterpolation'});
+}
+
 let vShapes = buildBars(vBarsParams, polygons);
 //let v2Shapes = buildBars(v2BarsParams, polygons);
 let cShapes = buildCircles(circlesParams, polygons);
 let lShapes = buildLines(linesParams, polygons);
 let lBShapes = buildBezierLines(linesParams, polygons);
+let lShape = buildLine(lineFlatParams, polygons);
 
-let curShape = vShapes;
+let curShape = mapToArr(vShapes);
 
 vShapes.forEach(function(shape, key) {
     fluidCanvas.render(shape, 'line');
@@ -174,67 +194,66 @@ let barsButton = document.getElementsByClassName('bars')[0];
 let circlesButton = document.getElementsByClassName('circles')[0];
 let linesButton = document.getElementsByClassName('lines')[0];
 let bezierLinesButton = document.getElementsByClassName('bezierLines')[0];
+let compositeLineButton = document.getElementsByClassName('compositeLine')[0];
 
 barsButton.addEventListener('click', function() {
-    let newShape: Map<any, any> = new coreJs.Map();
-    let ts;
+    let ts = fluidCanvas.transform(curShape, mapToArr(vShapes), 'easing', params);
 
-    curShape.forEach(function(shape, key) {
-        ts = fluidCanvas.transform(shape, vShapes.get(key), 'easing', params);
-
-        newShape.set(key, ts.shape);
+    curShape = ts.map(function(obj) {
+        return obj.shape;
     });
-
-    curShape = newShape;
 
     fluidCanvas.animate();
 });
 
 circlesButton.addEventListener('click', function() {
-    let newShape: Map<any, any> = new coreJs.Map();
-    let ts;
+    let ts = fluidCanvas.transform(curShape, mapToArr(cShapes), 'easing', params);
 
-    curShape.forEach(function(shape, key) {
-        ts = fluidCanvas.transform(shape, cShapes.get(key), 'easing', params);
-
-        newShape.set(key, ts.shape);
+    curShape = ts.map(function(obj) {
+        return obj.shape;
     });
-
-    curShape = newShape;
 
     fluidCanvas.animate();
 });
 
 linesButton.addEventListener('click', function() {
-    let newShape: Map<any, any> = new coreJs.Map();
-    let ts;
+    let ts = fluidCanvas.transform(curShape, mapToArr(lShapes), 'easing', params);
 
-    curShape.forEach(function(shape, key) {
-        ts = fluidCanvas.transform(shape, lShapes.get(key), 'easing', params);
-
-        newShape.set(key, ts.shape);
+    curShape = ts.map(function(obj) {
+        return obj.shape;
     });
-
-    curShape = newShape;
 
     fluidCanvas.animate();
 });
 
 bezierLinesButton.addEventListener('click', function() {
-    let newShape: Map<any, any> = new coreJs.Map();
-    let ts;
+    let ts = fluidCanvas.transform(curShape, mapToArr(lBShapes), 'easing', params);
 
-    curShape.forEach(function(shape, key) {
-        ts = fluidCanvas.transform(shape, lBShapes.get(key), 'easing', params);
-
-        newShape.set(key, ts.shape);
+    curShape = ts.map(function(obj) {
+        return obj.shape;
     });
-
-    curShape = newShape;
 
     fluidCanvas.animate();
 });
 
+compositeLineButton.addEventListener('click', function() {
+    let ts = fluidCanvas.transform(curShape, [lShape], 'easing', params);
+
+    curShape = [lShape];
+
+    fluidCanvas.animate();
+});
+
+
+function mapToArr (map: Map<any, any>): Array<any> {
+    let newArr = [];
+
+    map.forEach(function(val) {
+        newArr.push(val);
+    });
+
+    return newArr;
+}
 
 /*let canvas2: any = document.getElementsByClassName("animizer-canvas-background")[0];
  canvas2.width = 1000;
@@ -292,3 +311,117 @@ bezierLinesButton.addEventListener('click', function() {
  pnts: [200, 200, 250, 300, 500, 400, 700, 200, 600, 100],
  polygons: 50
  };*/
+
+
+
+let canvas2: any = document.getElementsByClassName("animizer-canvas-main2")[0];
+canvas2.width = 1000;
+canvas2.height = 300;
+let context2 = canvas2.getContext('2d');
+
+let fluidCanvas2 = new FluidCanvas(context2);
+let constructor2 = fluidCanvas2.shapesConstructor;
+
+let circlesParams2 = [
+    [215, 10, 25, 100],
+    [215, 25, 52.5, 150]
+];
+
+let linesParams2 = [
+    [50, 50, 100, 75, 105, 100],
+    [105, 100, 180, 20, 160, 170],
+    [160, 170, 175, 100, 215, 10],
+    [215, 50, 230, 60, 270, 150],
+    [270, 150, 295, 150, 320, 120]
+];
+
+function buildCircles2(params, polygons) {
+    let shapes: Map<any, any> = new coreJs.Map();
+    let shape;
+
+    for (let i = 0; i < params.length; i++) {
+        let circle = constructor.getCircle(
+            params[i][0],
+            params[i][1],
+            params[i][2],
+            params[i][3], polygons);
+
+        constructor2.setStyle(circle, 'color', colors[i]);
+        constructor2.setStyle(circle, 'isFill', true);
+
+        shape = fluidCanvas2.defineShape(circle,
+            {renderType: 'line', interpolationType: 'noInterpolation'});
+
+        fluidCanvas2.storage.setShapeCompositeId(shape);
+
+        shapes.set(i, shape);
+    }
+
+    fluidCanvas2.storage.incrementCompositeId();
+
+    return shapes;
+}
+
+function buildLines2(params, polygons) {
+    let shapes: Map<any, any> = new coreJs.Map();
+    let shape;
+
+    for (let i = 0; i < params.length; i++) {
+        let line = constructor2.getLine(params[i], polygons);
+
+        constructor2.setStyle(line, 'color', colors[i]);
+        constructor2.setStyle(line, 'isFill', true);
+        constructor2.setStyle(line, 'isStroke', true);
+
+        shape = fluidCanvas2.defineShape(line,
+            {renderType: 'line', interpolationType: 'noInterpolation'});
+
+        fluidCanvas2.storage.setShapeCompositeId(shape);
+
+        shapes.set(i, shape);
+    }
+
+    fluidCanvas2.storage.incrementCompositeId();
+
+    return shapes;
+}
+
+let c2Shapes = buildCircles2(circlesParams2, polygons);
+let l2Shapes = buildLines2(linesParams2, polygons);
+
+let curShape2 = mapToArr(c2Shapes);
+
+c2Shapes.forEach(function(shape, key) {
+    fluidCanvas2.render(shape, 'line');
+});
+
+/*l2Shapes.forEach(function(shape, key) {
+    fluidCanvas2.render(shape, 'line');
+});*/
+
+let circles2Button = document.getElementsByClassName('circles2')[0];
+let lines2Button = document.getElementsByClassName('lines2')[0];
+
+circles2Button.addEventListener('click', function() {
+    let ts;
+
+    ts = fluidCanvas2.transform(curShape2, mapToArr(c2Shapes), 'easing', params);
+
+    curShape2 = ts.map(function(obj) {
+        return obj.shape;
+    });
+
+    fluidCanvas2.animate();
+});
+
+lines2Button.addEventListener('click', function() {
+    let ts;
+
+     ts = fluidCanvas2.transform(curShape2, mapToArr(l2Shapes), 'easing', params);
+
+     curShape2 = ts.map(function(obj) {
+        return obj.shape;
+     });
+
+     fluidCanvas2.animate();
+});

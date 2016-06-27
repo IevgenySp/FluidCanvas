@@ -17,7 +17,8 @@ export interface InterpolationParameters {
     yEasing?: string;
     startFrame?: number;
     frames?: number;
-    tensionFactor?: number;
+    bezierTensionFactor?: number;
+    easingType?: string;
 }
 
 export interface InterpolationIterator {

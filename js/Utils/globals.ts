@@ -11,7 +11,7 @@ const SYSTEM_PARAMETERS = {
    dimentions: 2,
    startFrame: 0,
    frames: 80,
-   renderingInterpolationStep: 10
+   interpolationPointsPerSegment: 10
 };
 
 /**
@@ -36,7 +36,8 @@ const SHAPES = {
    rectangle:  'rectangle',
    line:       'line',
    polygon:    'polygon',
-   bezierLine: 'bezierLine'
+   bezierLine: 'bezierLine',
+   composite:  'composite'
 };
 
 /**
@@ -81,4 +82,9 @@ const INTERPOLATION = {
    bezier:                 'bezier'
 };
 
-export {SYSTEM_PARAMETERS, INTERPOLATION, SHAPES_PARAMETERS, SHAPES, RENDER_SHAPES};
+const INTERPOLATION_STEP = {
+   linear: 'linear',
+   time:   'time'
+};
+
+export {SYSTEM_PARAMETERS, INTERPOLATION, SHAPES_PARAMETERS, SHAPES, RENDER_SHAPES, INTERPOLATION_STEP};

@@ -12,16 +12,11 @@ type Shapes = Circle | Rectangle | Polygon;
 export default class BezierInterpolation extends Interpolation {
     frames: number;
     tensionFactor: number;
-    constructor(startShape: Shapes, endShape?: Shapes, parameters?: InterpolationParameters) {
-        super(startShape, endShape);
-
-        if (parameters) {
-            this.frames = parameters.frames || SYSTEM_PARAMETERS. frames;
-            this.tensionFactor = parameters.tensionFactor || SHAPES_PARAMETERS.bezierTension;
-        } else {
-            this.frames = SYSTEM_PARAMETERS. frames;
-            this.tensionFactor = SHAPES_PARAMETERS.bezierTension;
-        }
+    constructor(shapes: Array<Shapes>, parameters: InterpolationParameters) {
+        super(shapes, parameters);
+        
+        this.frames        = parameters.frames;
+        this.tensionFactor = parameters.bezierTensionFactor;
     }
 
     public iterator(): IterableIterator<Float32Array> {

@@ -2,6 +2,8 @@
  * Created by isp on 4/25/16.
  */
 
+import * as _ from 'lodash';
+
 const HELPER = {
     /**
      * Convert degrees to radians
@@ -241,6 +243,24 @@ const HELPER = {
         let containerArray = container || [];
         
         return [].concat.apply(containerArray, arr);
+    },
+
+    splitArray: (arr: Array<any>, chunks: Array<number>): Array<Array<any>> => {
+        let resultArray = [];
+        let flatArray = _.clone(arr);
+        
+        chunks.forEach((number, index) => {
+            let chunkArray = [];
+
+            for (let i = 0; i < number; i++) {
+                chunkArray.push(flatArray[0]);
+                flatArray.shift();
+            }
+            
+            resultArray.push(chunkArray);
+        });
+        
+        return resultArray;
     }
 };
 

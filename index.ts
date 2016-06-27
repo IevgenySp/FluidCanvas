@@ -8,4 +8,4 @@ import FluidCanvas from './js/fluidCanvas';
     ctx.FluidCanvas = FluidCanvas;
 
     return ctx;
-})(window); 
+})(window);

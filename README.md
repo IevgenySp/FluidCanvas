@@ -26,13 +26,13 @@ var shape2 = shapeConstructor.getCircle(<startAngle>, <radius>, <x>, <y>);
 
 ```javascript
 // Add shapes to fluid canvas storage, define shape points geometry
-fluidCanvas.setPoints(shape1);
-fluidCanvas.setPoints(shape2);
+fluidCanvas.defineShape(shape1);
+fluidCanvas.defineShape(shape2);
 ```
 
 ```javascript
 // Return iterator of shapes transformations arrays, add iterator to storage
-fluidCanvas.transform(shape1, shape2);
+fluidCanvas.transform([shape1], [shape2]);
 ```
 
 ```javascript
