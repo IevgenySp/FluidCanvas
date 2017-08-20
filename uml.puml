@@ -1,0 +1,15 @@
+@startuml
+
+class FluidCanvas {
+    + storage: Storage
+    + geometry: Geometry
+    + compositeGeometry: CompositeGeometry
+    + renderer: Render
+    + shapesConstructor: Constructor
+    + context: CanvasRenderingContext2D
+
+    + constructor(context: CanvasRenderingContext2D): FluidCanvas
+
+}
+
+@enduml

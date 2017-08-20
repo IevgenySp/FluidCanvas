@@ -4,234 +4,367 @@
 
 import * as _ from 'lodash';
 
-import ShapesGeometry from './../shapes';
-import {Shapes} from "./../../Interfaces/shapeInterfaces";
-import {SYSTEM_PARAMETERS, SHAPES} from './../../Utils/globals';
+import ShapesGeometry from './../ShapesGeometry';
+import {Shape, ShapeAdvancedOptions} from "./../../Interfaces/shapeInterfaces";
+import {SHAPES} from './../../Utils/globals';
+import {HELPER} from './../../Utils/helper';
 
 export default class CompositeGeometry extends ShapesGeometry {
-    params:any;
-
-    constructor(parameters?:any) {
-        super(parameters);
+    constructor() {
+        super();
     }
 
-    public getCompositeShape(shapes: Array<Shapes>): any {
-        let composite = shapes[0];
-        let points = shapes[0].points;
+    /**
+     * Get grouped series of shapes for further transformation
+     * @param startShapes
+     * @param endShapes
+     * @param options
+     * @returns {Array<Array<Array<Shape>>>}
+     */
+    public transformShapes(startShapes: Array<Shape>,
+                           endShapes: Array<Shape>,
+                           options?: ShapeAdvancedOptions): 
+                            Array<Array<Array<Shape>>> {
 
-        composite.type = SHAPES.composite;
-        composite.isRendered = false;
+        this.checkShapeTextType(startShapes);
+        this.checkShapeTextType(endShapes);
+        
+        let shapesArrRatio = this.shapesArraysRatio(startShapes, endShapes);
+        let groupedShapes = this.groupShapes(startShapes, endShapes, shapesArrRatio);
+        
+        groupedShapes.forEach((groupedShape, index) =>
+            this.decompositeShape(groupedShapes[index], shapesArrRatio));
+        
+        return groupedShapes;
+    }
 
-        for (let i = 1; i < shapes.length; i++) {
-            points = this.mergeArrays(points, shapes[i].points);
+    /**
+     * Split and redefine shapes in smaller and bigger groups
+     * @param shapesGroup
+     * @param shapesArraysRatio
+     * @returns {Array<Array<Shape>>}
+     */
+    decompositeShape(shapesGroup: Array<Array<Shape>>,
+                    shapesArraysRatio: number) {
+        
+        if (shapesArraysRatio === 0) {
+            return shapesGroup;
+        } else if (shapesArraysRatio === 1) {
+            let shapesPolygons =
+                shapesGroup[0].map((shape) => shape.geometry.polygons);
+            let shapesPolygonsSum = this.groupPolygonsSum(shapesGroup[0]);
+            let normalizedPolygons = HELPER.commonMultiple(
+                shapesPolygonsSum, shapesGroup[1][0].geometry.polygons);
 
-            composite.polygons += shapes[i].polygons;
-            composite.points = points;
+            shapesGroup[1][0].geometry.polygons = normalizedPolygons;
+
+            let transformedShape = this.convertToPolygon(shapesGroup[1][0]);
+            let shapesNormalizedPolygons =
+                this.normalizeShapesPolygons(shapesPolygons, shapesPolygonsSum,
+                    transformedShape.geometry.polygons);
+
+            shapesGroup[1] =
+                this.splitShapePolygon(transformedShape, shapesNormalizedPolygons);
+
+            shapesGroup[0] = shapesGroup[0].map((shape, index) => {
+                shape.geometry.polygons = shapesNormalizedPolygons[index];
+
+                return this.convertToPolygon(shape);
+            });
+            
+        } else {
+            let shapesPolygons =
+                shapesGroup[1].map((shape) => shape.geometry.polygons);
+            let shapesPolygonsSum = this.groupPolygonsSum(shapesGroup[1]);
+            let normalizedPolygons = HELPER.commonMultiple(
+                shapesPolygonsSum, shapesGroup[0][0].geometry.polygons);
+
+            shapesGroup[0][0].geometry.polygons = normalizedPolygons;
+
+            let transformedShape = this.convertToPolygon(shapesGroup[0][0]);
+            let shapesNormalizedPolygons =
+                this.normalizeShapesPolygons(shapesPolygons, shapesPolygonsSum,
+                    transformedShape.geometry.polygons);
+
+            shapesGroup[0] =
+                this.splitShapePolygon(transformedShape, shapesNormalizedPolygons);
+            
+            shapesGroup[1] = shapesGroup[1].map((shape, index) => {
+                shape.geometry.polygons = shapesNormalizedPolygons[index];
+
+                return this.convertToPolygon(shape);
+            });
         }
     }
 
-    public getDecompositeShapes(shapes: Array<Shapes>, shapeToDecomp: Shapes): Array<Shapes> {
-        let compositePolygonsLength = this.getCompositPointsLength(shapes);
-        let shapePolygonsLength = shapeToDecomp.polygons;
-        let maxPolygons = Math.max(compositePolygonsLength, shapePolygonsLength);
-        let polygonsPerShape = ~~(maxPolygons / shapes.length);
+    /**
+     * Split polygon points accordingly to bigger group normalized polygons amount
+     * Linear method
+     * @param polygon
+     * @param chunks
+     * @param polygonsSum
+     * @returns {Array}
+     */
+    splitPolygon(polygon: Shape, chunks: Array<number>): Array<Shape> {
+        let splitPoints = [];
+        let points = _.clone(polygon.geometry.points)[Symbol.iterator]();
+        
+        chunks.forEach((chunk) => {
+            let splitGroup = [];
 
-
-        let pointsChunks = this.splitPoints(shapeToDecomp, shapes.length);
-        let pointsChunksFloat32Array = this.convertToFloat32Array(pointsChunks);
-
-        let pntsChunks = this.splitBasePoints(shapeToDecomp, shapes.length);
-        shapeToDecomp.childs = [];
-
-        let decomposedShapes = shapes.map((shape, index) => {
-            let newShape: Shapes = _.clone(shapeToDecomp);
-
-            delete newShape.childs;
-
-            newShape.polygons = polygonsPerShape;
-
-            if (pntsChunks.length > 0) {
-                newShape.pnts = pntsChunks[index];
-                newShape.polygons = newShape.pnts.length / 2;
+            for (let i = 0; i < chunk; i++) {
+                splitGroup.push(points.next().value);
+                splitGroup.push(points.next().value);
             }
 
-            if (pointsChunksFloat32Array.length > 0) {
-                newShape.points = pointsChunksFloat32Array[index];
-                // shape.points.length not divided by 2 since same amount
-                // of reversed points for contour will be added
-                newShape.polygons = newShape.points.length;
-            }
-
-            newShape.parent = shapeToDecomp;
-            shapeToDecomp.childs.push(newShape);
-
-            newShape.id = 'child_' + index + ':' + newShape.id;
-
-            return newShape;
+            splitPoints.push(splitGroup);
         });
         
-        return decomposedShapes;
+        let splitPolygons = splitPoints.map(points => {
+            polygon.geometry.referencePoints = points;
+            polygon.geometry.polygons = points.length / 2;
+
+            return this.convertToPolygon(polygon);
+        });
+        
+        return splitPolygons;
     }
 
-    public mergeArrays (arr1: Float32Array, arr2: Float32Array): Float32Array {
-        let pointsLength = (arr1.length + arr2.length) / 2;
-        let buffer = new ArrayBuffer(pointsLength * 4 * SYSTEM_PARAMETERS.dimentions);
-        let fl32XY = new Float32Array(buffer);
+    /**
+     * Split smaller shape polygon points into number of polygons fitted with bigger group
+     * Random method
+     * @param polygon
+     * @param chunks
+     * @returns {Shape[]}
+     */
+    splitShapePolygon(polygon: Shape, chunks: Array<number>): Array<Shape> {
+        let splitPoints = [];
+        let points = _.clone(polygon.geometry.points);
+        let counter = 0;
+        let pointsPairs = [];
 
-        let points = [];
-
-        for (let i = 0; i < arr1.length; i++) {
-            points.push(arr1[i])
+        for (let i = 0; i < points.length - 1; i+=2) {
+            pointsPairs.push([points[i], points[i+1]]);
         }
 
-        for (let i = 0; i < arr2.length; i++) {
-            points.push(arr2[i]);
-        }
+        let pointsPairsShuffled = _.shuffle(pointsPairs);
+        
+        chunks.forEach((chunk) => {
+            let splitGroup = [];
 
-        fl32XY.set(points);
+            for (let i = 0; i < chunk; i++) {
+                splitGroup.push(pointsPairsShuffled[counter][0]);
+                splitGroup.push(pointsPairsShuffled[counter][1]);
 
-        return fl32XY;
+               counter++;
+            }
+
+            splitPoints.push(splitGroup);
+        });
+
+        let splitPolygons = splitPoints.map(points => {
+            polygon.geometry.referencePoints = points;
+            polygon.geometry.polygons = points.length / 2;
+
+            return this.convertToPolygon(polygon);
+        });
+        
+        return splitPolygons;
     }
 
-    public getCompositPointsLength(shapes: Array<Shapes>): number {
-        let polygons = 0;
+    /**
+     * Split polygons of bigger shapes group accordingly to normalized polygons amount
+     * @param shapesPolygons
+     * @param shapesPolygonsSum
+     * @param normalizedPolygons
+     * @returns {number[]}
+     */
+    normalizeShapesPolygons(shapesPolygons: Array<number>,
+                            shapesPolygonsSum: number,
+                            normalizedPolygons: number): Array<number> {
+        let weightCoefficient = normalizedPolygons / shapesPolygonsSum;
+        let nPolygons = shapesPolygons.map(polygon =>
+            Math.round(polygon * weightCoefficient));
+        let delta = normalizedPolygons -
+            nPolygons.reduce((a,b) => a + b);
 
-        for (let i = 0; i < shapes.length; i++) {
-            polygons += shapes[i].polygons;
-        }
+        if (delta !== 0) {
+            if (delta > 0) {
+                let counter = 0;
 
-        return polygons;
-    }
-    
-    public getShapesRatio (startShapes: Array<Shapes>, endShapes: Array<Shapes>) {
-        let shapes = {
-            direction: 'equal',
-            ratio: []
-        };
+                while (delta !== 0) {
+                    if (nPolygons[counter]) {
+                        nPolygons[counter]++;
+                        counter++
+                    } else {
+                        counter = 0;
+                        nPolygons[0]++;
+                        counter++;
+                    }
 
-        if (startShapes.length === endShapes.length) {
-            startShapes.map(() => {
-                shapes.ratio.push(1);
-            });
-        }
+                    delta--;
+                }
+            } else {
+                let counter = 0;
 
-        if (startShapes.length > endShapes.length) {
-            shapes.direction = 'start';
+                while (delta !== 0) {
+                    if (nPolygons[counter]) {
+                        nPolygons[counter]--;
+                        counter++
+                    } else {
+                        counter = 0;
+                        nPolygons[0]--;
+                        counter++;
+                    }
 
-            let basePart = Math.floor(startShapes.length / endShapes.length);
-            let rest = startShapes.length - endShapes.length * basePart;
-
-            shapes.ratio = endShapes.map((shape, index) => {
-                return basePart;
-            });
-
-            shapes.ratio[0] = shapes.ratio[0] + rest;
-        }
-
-        if (startShapes.length < endShapes.length) {
-            shapes.direction = 'end';
-
-            let basePart = Math.floor(endShapes.length / startShapes.length);
-            let rest = endShapes.length - startShapes.length * basePart;
-
-            shapes.ratio = startShapes.map((shape, index) => {
-                return basePart;
-            });
-            
-            shapes.ratio[0] = shapes.ratio[0] + rest;
+                    delta++;
+                }
+            }
         }
         
-        return shapes;
+        return nPolygons;
     }
 
-    public splitPoints (shape: Shapes, splitFactor: number): Array<Array<number>> {
-        try {
+    /**
+     * Sum of all polygons from bigger group
+     * @param shapesGroup
+     * @returns {T|any|number}
+     */
+    private groupPolygonsSum(shapesGroup:Array<Shape>): number {
+        return shapesGroup
+            .map((shape) => shape.geometry.polygons)
+            .reduce((a, b) => a + b);
+    }
+
+    /**
+     * Create a set of equally distributed group shapes from both arrays
+     * @param sShapes
+     * @param eShapes
+     * @param ratio
+     * @returns {Array}
+     */
+    private groupShapes(sShapes: Array<Shape>,
+                        eShapes: Array<Shape>, ratio: number):
+                                        Array<Array<Array<Shape>>> {
+        let groupedShapes = [];
+        let startShapes = sShapes.map(shape => _.cloneDeep(shape));
+        let endShapes = eShapes.map(shape => _.cloneDeep(shape));
+
+        if (ratio === 0) {
+            startShapes.forEach((shape, index) => {
+                groupedShapes.push([[shape], [endShapes[index]]]);
+            });
             
-            let polygons = shape.type === SHAPES.line || shape.type === SHAPES.bezierLine ?
-                shape.polygons / 2 : shape.polygons;
-            let fullPointsSets = Math.floor(polygons / splitFactor);
-            let lastPoints = polygons - fullPointsSets * splitFactor;
-            let splittedPoints = [];
-            let pnts = shape.points[Symbol.iterator]();
+        } else if (ratio === 1) {
+            let startShapesSize = startShapes.length;
+            let endShapesSize = endShapes.length;
+            let shapesRatioArray =
+                this.shapesSplitRatio(startShapesSize, endShapesSize);
+            let counter = 0;
 
-            for (let i = 0; i < splitFactor; i++) {
-                let pointsChunk = [];
+            endShapes.forEach((shape, index) => {
+                let shapesGroup = [];
 
-                for (let f = 0; f < fullPointsSets; f++) {
-                    pointsChunk.push(pnts.next().value);
-                    pointsChunk.push(pnts.next().value);
+                for (let i = 0; i < shapesRatioArray[index]; i++) {
+                    shapesGroup.push(startShapes[counter]);
+                    counter++;
                 }
 
-                splittedPoints.push(pointsChunk);
-            }
+                groupedShapes.push([shapesGroup, [shape]]);
+            });
+            
+        } else {
+            let startShapesSize = startShapes.length;
+            let endShapesSize = endShapes.length;
+            let shapesRatioArray =
+                this.shapesSplitRatio(endShapesSize, startShapesSize);
+            let counter = 0;
 
-            let chunk = [];
+            startShapes.forEach((shape, index) => {
+                let shapesGroup = [];
 
-            while (lastPoints > 0) {
-                chunk.push(pnts.next().value);
-
-                lastPoints--;
-            }
-
-            if (chunk.length > 0) {
-                splittedPoints.push(chunk);
-            }
-
-            return splittedPoints;
-        } catch (e) {
-            console.log('shape points or polygons is not defined');
-        }
-    }
-
-    public splitBasePoints (shape: Shapes, splitFactor: number): Array<Array<number>> {
-        try {
-
-            if (!shape.pnts) return [];
-
-            let polygons = shape.pnts.length / 2;
-            let fullPointsSets = Math.floor(polygons / splitFactor);
-            let lastPoints = polygons - fullPointsSets * splitFactor;
-            let splittedPoints = [];
-            let pnts = shape.pnts[Symbol.iterator]();
-
-            for (let i = 0; i < splitFactor; i++) {
-                let pointsChunk = [];
-
-                for (let f = 0; f < fullPointsSets; f++) {
-                    pointsChunk.push(pnts.next().value);
-                    pointsChunk.push(pnts.next().value);
+                for (let i = 0; i < shapesRatioArray[index]; i++) {
+                    shapesGroup.push(endShapes[counter]);
+                    counter++;
                 }
 
-                splittedPoints.push(pointsChunk);
-            }
-
-            let chunk = [];
-
-            while (lastPoints > 0) {
-                chunk.push(pnts.next().value);
-
-                lastPoints--;
-            }
-
-            if (chunk.length > 0) {
-                splittedPoints.push(chunk);
-            }
-
-            return splittedPoints;
-        } catch (e) {
-            console.log('shape pnts is not defined');
+                groupedShapes.push([[shape], shapesGroup]);
+            });
         }
+
+        return groupedShapes;
     }
 
-    public convertToFloat32Array (arrays: Array<Array<number>>): Array<Float32Array> {
-        return arrays.map(function(arr) {
-            let pointsLength = arr.length / 2;
-            let buffer = new ArrayBuffer(pointsLength * 4 * SYSTEM_PARAMETERS.dimentions);
-            let fl32XY = new Float32Array(buffer);
+    /**
+     * Normalized ratio for equal distribution of shapes from both arrays
+     * @param startShapesSize
+     * @param endShapesSize
+     * @param leftDirection
+     * @returns {Array}
+     */
+    private shapesSplitRatio(startShapesSize: number,
+                             endShapesSize: number): Array<number> {
 
-            fl32XY.set(arr);
+        let shapesRatio;
+        let delta;
+        let shapesRatioArray = [];
 
-            return fl32XY;
+        shapesRatio = Math.floor(startShapesSize / endShapesSize);
+        delta = startShapesSize -
+            endShapesSize * shapesRatio;
+
+        for (let i = 0; i < endShapesSize; i++) {
+            shapesRatioArray.push(shapesRatio);
+        }
+
+        if (delta !== 0) {
+            if (delta > 1) {
+                let counter = 0;
+
+                while (delta !== 0) {
+                    if (shapesRatioArray[counter]) {
+                        shapesRatioArray[counter]++;
+                        counter++
+                    } else {
+                        counter = 0;
+                        shapesRatioArray[0]++;
+                        counter++;
+                    }
+
+                    delta--;
+                }
+            } else {
+                shapesRatioArray[shapesRatioArray.length - 1] = shapesRatio + delta;
+            }
+        }
+
+        return shapesRatioArray;
+    }
+
+    /**
+     * Define which shapes group is bigger
+     * @param firstShapesArr
+     * @param secondShapesArr
+     * @returns {number}
+     */
+    private shapesArraysRatio(firstShapesArr: Array<Shape>,
+                             secondShapesArr: Array<Shape>): number {
+
+        if (firstShapesArr.length == secondShapesArr.length) return 0;
+        else if (firstShapesArr.length > secondShapesArr.length) return 1;
+        else return -1;
+    }
+
+    /**
+     * Check whether groups do not contain text fields
+     * @param shapes
+     */
+    private checkShapeTextType(shapes) {
+        shapes.forEach((shape) => {
+            if (shape.type === SHAPES.text.toUpperCase()) {
+                throw new Error('Shape of type ' + SHAPES.text.toUpperCase() +
+                    ' cannot be used in transformations');
+            }
         });
     }
 }

@@ -203,15 +203,20 @@ const HELPER = {
      * @param eShapeCoef
      * @returns {number}
      */
-    commonMultiple: (sShapePolygons: number, eShapePolygons: number, sShapeCoef, eShapeCoef): number => {
+    commonMultiple: (sShapePolygons: number, 
+                     eShapePolygons: number, 
+                     sShapeCoef?: number, eShapeCoef?: number): number => {
+        let startShapeCoef = sShapeCoef || 1;
+        let endShapeCoef = eShapeCoef || 1;
+        
         let polygons = Math.max(sShapePolygons, eShapePolygons);
 
-        if (polygons % sShapeCoef === 0 && polygons % eShapeCoef === 0) {
+        if (polygons % startShapeCoef === 0 && polygons % endShapeCoef === 0) {
             return polygons;
         } else {
             polygons++;
 
-            return HELPER.commonMultiple(polygons, polygons, sShapeCoef, eShapeCoef);
+            return HELPER.commonMultiple(polygons, polygons, startShapeCoef, endShapeCoef);
         }
     },
 
@@ -245,6 +250,12 @@ const HELPER = {
         return [].concat.apply(containerArray, arr);
     },
 
+    /**
+     * Split array for custom array chunks
+     * @param arr
+     * @param chunks
+     * @returns {Array}
+     */
     splitArray: (arr: Array<any>, chunks: Array<number>): Array<Array<any>> => {
         let resultArray = [];
         let flatArray = _.clone(arr);
@@ -261,6 +272,125 @@ const HELPER = {
         });
         
         return resultArray;
+    },
+
+    /**
+     * Merge shape and initial options
+     * @param shape
+     * @param optionsObj1
+     * @param optionsObj2
+     * @param mergeLeft
+     * @returns {any}
+     */
+    mergeOptions: (shape: any, optionsObj1: any, optionsObj2: any, mergeLeft?: boolean): any => {
+        let mergeDirectionLeft = mergeLeft === undefined || mergeLeft === true;
+
+        if (mergeDirectionLeft && !optionsObj1) {
+            return optionsObj2;
+        }
+
+        if (!mergeDirectionLeft && !optionsObj2) {
+            return optionsObj1;
+        }
+        
+        if (mergeDirectionLeft) {
+            HELPER.setOptions(shape, optionsObj1);
+
+            Object.keys(optionsObj2).forEach(key => {
+                if (!optionsObj1.hasOwnProperty(key)) {
+                    HELPER.setOption(shape, key, optionsObj2[key]);
+                }
+            });
+        } else {
+            HELPER.setOptions(shape, optionsObj2);
+
+            Object.keys(optionsObj1).forEach(key => {
+                if (!optionsObj2.hasOwnProperty(key)) {
+                    HELPER.setOption(shape, key, optionsObj1[key]);
+                }
+            });
+        }
+        
+        return shape;
+    },
+
+    /**
+     * Set shape options
+     * @param shape
+     * @param optionsObj
+     * @param parentProperty
+     */
+    setOptions: (shape: any, optionsObj: any, parentProperty?: string): void => {
+        Object.keys(optionsObj).forEach(key => {
+            if (parentProperty) {
+                HELPER.setOption(shape, key, optionsObj[key], parentProperty);
+            } else {
+                HELPER.setOption(shape, key, optionsObj[key]);
+            }
+        });
+    },
+
+    /**
+    * Set single style property
+    * @param shape
+    * @param property
+    * @param value
+    * @param parentProperty
+    */
+    setOption: (shape: any, property: string,
+                value: any, parentProperty?: string): void => {
+
+        if (parentProperty) {
+            if (!shape[parentProperty]) {
+                shape[parentProperty] = {};
+            }
+
+            shape[parentProperty][property] = value;
+        } else {
+            shape[property] = value;
+        }
+    },
+
+    /**
+     * Set points to Float32Array buffer
+     * @param points
+     * @param dimensions
+     * @returns {Float32Array}
+     */
+    setPointsToBuffer: (points: Array<number>, dimensions: number): Float32Array => {
+        let pointsLength = points.length / 2;
+        let buffer = new ArrayBuffer(pointsLength * 4 * dimensions);
+        let fl32XY = new Float32Array(buffer);
+
+        fl32XY.set(points);
+
+        return fl32XY;
+    },
+
+    /**
+     * Convert set of points arrays to Float32Array buffer
+     * @param arrays
+     * @param dimensions
+     * @returns {Float32Array[]}
+     */
+    setArraysToBuffer (arrays: Array<Array<number>>, dimensions: number): Array<Float32Array> {
+        return arrays.map(function(arr) {
+            return this.setPointsToBuffer(arr, dimensions);
+        });
+    },
+
+    /**
+     * Generates unique ID number for shapes
+     * @returns {string}
+     */
+    generateUID (): string {
+        let head = (Math.random() * 46656) | 0;
+        let tail = (Math.random() * 46656) | 0;
+
+        let strHead = ("000" + head.toString(36)).slice(-3);
+        let strTail = ("000" + tail.toString(36)).slice(-3);
+        
+        return strHead + strTail;
     }
 };
 

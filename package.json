@@ -1,36 +1,59 @@
 {
   "name": "fluid-canvas",
-  "version": "0.0.1",
-  "description": "FluidCanvas",
+  "version": "0.0.2",
+  "description": "FluidCanvas library for smooth transformations of geometry shapes",
+  "main": "distribute/fcanvas.js",
+  "min": "distribute/fcanvas.min.js",
   "author": "Ievgenii Spitsyn",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/IevgenySp/FluidCanvas.git"
   },
-  "main": "bundle.js",
+  "keywords": [
+    "Visualization",
+    "Geometry",
+    "Transformations",
+    "Shapes"
+  ],
   "dependencies": {
-    "lodash": "^3.10.1",
-    "typescript": "^1.8.10"
+    "lodash": "3.10.0",
+    "typescript": "2.2.2"
   },
   "devDependencies": {
-    "browserify": "^6.2.0",
-    "core-js": "^2.1.0",
-    "envify": "^3.0.0",
+    "@types/core-js": "0.9.41",
+    "@types/lodash": "3.10.0",
+    "@types/node": "7.0.18",
+    "awesome-typescript-loader": "^3.1.3",
+    "babel-core": "^6.24.1",
+    "babel-loader": "^7.0.0",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-istanbul": "4.1.3",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.24.1",
+    "babel-plugin-transform-es2015-modules-commonjs-simple": "^6.7.4",
+    "babel-polyfill": "6.23.0",
+    "babel-preset-env": "^1.5.1",
+    "babel-preset-es2015-webpack": "^6.4.3",
+    "browserify": "^14.4.0",
+    "core-js": "0.9.18",
     "grunt": "^0.4.5",
     "grunt-browserify": "^4.0.1",
     "grunt-typedoc": "^0.2.4",
     "jest-cli": "^0.4.3",
     "jit-grunt": "^0.9.1",
-    "observe-js": "^0.5.7",
-    "promise": "^7.1.1",
-    "tsify": "^0.13.2",
-    "typedoc": "^0.4.3",
-    "uglify-js": "~2.4.15",
-    "uglifyify": "^3.0.1",
-    "watchify": "^2.1.1"
+    "ts-loader": "2.1.0",
+    "tsify": "3.0.1",
+    "watchify": "^2.1.1",
+    "webpack": "^2.6.1",
+    "webpack-typescript": "^0.5.6",
+    "chroma-js": "1.3.4"
   },
-  "scripts": {},
+  "scripts": {
+    "build": "webpack --config webpack.production.config.js",
+    "dev": "webpack -w",
+    "transpile": "browserify index.ts -p [ tsify --noImplicitAny=false ] > distribute/fcanvas.js",
+    "tstranspile": "tsc --watch -m amd --outFile fcanvas.js index.ts"
+  },
   "babel": {
     "plugins": [
       "add-module-exports"

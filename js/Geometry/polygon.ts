@@ -2,163 +2,183 @@
  * Created by isp on 6/5/16.
  */
 
-import ShapesGeometry from './shapes';
 import {HELPER} from './../Utils/helper';
 import {INTERPOLATION, SYSTEM_PARAMETERS} from './../Utils/globals';
-import {Shapes, ShapeParameters} from "./../Interfaces/shapeInterfaces";
-import LinearInterpolation from './../Interpolation/linear';
-import BezierInterpolation from './../Interpolation/bezier';
-import EasingInterpolation from './../Interpolation/easing';
+import {Shape, Shapes,
+    ShapeAdvancedOptions, ShapeStyle} from "./../Interfaces/shapeInterfaces";
+import LinearInterpolation from './../Interpolation/Linear';
+import BezierInterpolation from './../Interpolation/Bezier';
+import EasingInterpolation from './../Interpolation/Easing';
 
-export default class PolygonGeometry extends ShapesGeometry {
-    tensionFactor:                 number;
-    interpolationPointsPerSegment: number;
-    easingType:                    string;
-    interpolationType:             string;
-    constructor(parameters: ShapeParameters) {
-        super(parameters);
+export default class PolygonGeometry {
+    geometry:   Shapes;
+    advanced:   ShapeAdvancedOptions;
+    type:       string;
+    style:      ShapeStyle;
+    isRendered: boolean;
+    minPolygons: number;
+    constructor(shape: Shape) {
+        this.geometry = shape.geometry;
+        this.advanced = shape.advanced;
+        this.type = shape.type;
+        this.style = shape.style;
+        this.isRendered = shape.isRendered;
 
-        this.tensionFactor                 = parameters.bezierTensionFactor;
-        this.interpolationPointsPerSegment = parameters.interpolationPointsPerSegment;
-        this.easingType                    = parameters.easingType;
-        this.interpolationType             = parameters.interpolationType;
+        this.minPolygons = 2;
+        
+        this.geometry.shapeSidesCoefficient = 1;
     }
 
-    public setPoints(shape: Shapes): Shapes {
+    public setShapeGeometry(): PolygonGeometry {
+        this.geometry.polygons = this.normalizePolygons();
 
-        switch (this.interpolationType) {
-            case INTERPOLATION.noInterpolation:
-                shape.polygons = this.setPolygons(shape);
-                shape.points = this.setPointToBuffer(
-                    shape.pnts);
-                break;
-            case INTERPOLATION.linear:
-                shape.polygons = this.setPolygons(shape);
-                shape.points = this.setPointToBuffer(
-                    this.linearIntPoints(shape));
-                break;
-            case INTERPOLATION.bezier:
-                shape.polygons = this.setPolygons(shape);
-                shape.points = this.setPointToBuffer(
-                    this.bezierIntPoints(shape));
-                break;
-            case INTERPOLATION.easing:
-                shape.polygons = this.setPolygons(shape);
-                shape.points = this.setPointToBuffer(
-                    this.easingIntPoints(shape));
-        }
-
-        shape.polygons = this.setPolygons(shape);
-        shape.interpolation = this.interpolationType;
-        shape.geometry = this;
-
-        return shape;
+        return this.setGeometry();
     }
 
-    public resetPoint(shape: Shapes): Shapes {
-        shape.points = this.setPointToBuffer(
-            this.linearIntPoints(shape));
-
-        return shape;
+    public resetShapeGeometry(): PolygonGeometry {
+        return this.setGeometry();
     }
     
-    public setPointToBuffer (points: Array<number>): Float32Array {
-        let pointsLength = points.length / 2;
-        let buffer = new ArrayBuffer(pointsLength * 4 * SYSTEM_PARAMETERS.dimentions);
-        let fl32XY = new Float32Array(buffer);
+    public setGeometry(): PolygonGeometry {
 
-        fl32XY.set(points);
-
-        return fl32XY;
-    }
-
-    public linearIntPoints (shape: Shapes): Array<number> {
-        let polygonVectors = [];
-        let pnts = shape.pnts;
-
-        let polygonPoints = [];
-
-        let lInt = new LinearInterpolation([shape], this.params);
+        let geometry = this.geometry;
         
-        for (let i = 0; i < pnts.length - 2; i += 2) {
-            polygonVectors.push(HELPER.getVectorLength(pnts[i], pnts[i+1], pnts[i+2], pnts[i+3]));
+        switch (this.advanced.interpolation) {
+            case INTERPOLATION.noInterpolation:
+            case INTERPOLATION.linear:
+                geometry.points = HELPER.setPointsToBuffer(
+                    this.linearPoints(),
+                    SYSTEM_PARAMETERS.dimensions);
+                break;
+            case INTERPOLATION.bezier:
+                geometry.points = HELPER.setPointsToBuffer(
+                    this.bezierPoints(),
+                    SYSTEM_PARAMETERS.dimensions);
+                break;
+            case INTERPOLATION.easing:
+                geometry.points = HELPER.setPointsToBuffer(
+                    this.easingPoints(),
+                    SYSTEM_PARAMETERS.dimensions);
         }
 
-        let sumVector = polygonVectors.reduce(function(a, b) { return a + b; }, 0);
+        return this;
+    }
+
+    /**
+     * Define polygons number for circle shape
+     * @returns {number}
+     */
+    private normalizePolygons(): number {
+        return this.referencePoints().length / 2;
+    }
+
+    //TODO Implement reset points method
+    private resetPoints() {
+
+    }
+
+    public referencePoints(): Array<number> {
+        let geometry = this.geometry;
+        
+        if (geometry.referencePoints.length / 2 < this.minPolygons) {
+            throw new Error("Rectangle shape should contain at least " +
+                this.minPolygons + " reference points");
+        }
+
+        return geometry.referencePoints;
+    }
+
+    public linearPoints (): Array<number> {
+        let refPoints = this.referencePoints();
+        let polygonVectors = [];
         let pointsPerSegment = [];
+        let sumVector;
+        let pointsInVector;
+        let geometry = this.geometry;
+        let polygons = geometry.polygons;
+        let lInt = new LinearInterpolation([this]);
+
+        for (let i = 0; i < refPoints.length - 2; i += 2) {
+            polygonVectors.push(HELPER.getVectorLength(
+                refPoints[i], refPoints[i+1], refPoints[i+2], refPoints[i+3]));
+        }
+
+        polygonVectors.push(HELPER.getVectorLength(
+            refPoints[refPoints.length - 2],
+            refPoints[refPoints.length - 1], refPoints[0], refPoints[1]));
+
+        sumVector = polygonVectors.reduce(function(a, b) { return a + b; }, 0);
 
         for (let i = 0; i < polygonVectors.length; i ++) {
             pointsPerSegment.push(polygonVectors[i] / sumVector);
         }
-
-        let polygons = shape.polygons - pnts.length / 2;
-
-        if (polygons !== 0) {
-
-            let pointsInVector = HELPER.splitPoints(pointsPerSegment, polygons);
-
-            polygonPoints = lInt.getPointsOnVectors(pnts, pointsInVector, true);
-            
-        } else {
-            polygonPoints = pnts;
-        }
         
-        return polygonPoints;
+        pointsInVector = HELPER.splitPoints(pointsPerSegment, polygons);
+
+        return lInt.getPointsOnVectors(refPoints, pointsInVector);
     }
     
-    public bezierIntPoints (shape: Shapes): Array<number> {
-        let basePoints = shape.pnts;
+    public bezierPoints (): Array<number> {
+        let refPoints = this.referencePoints();
         let trajectoryPoints = [];
         let points;
+        let vecA;
+        let vecB;
+        let geometry = this.geometry;
+        let polygons = geometry.polygons;
+        let bInt = new BezierInterpolation([this]);
 
-        let bInt = new BezierInterpolation([shape], this.params);
+        for (let i = 0; i < refPoints.length - 2; i+=2) {
+            vecA = [refPoints[i], refPoints[i+1]];
+            vecB = [refPoints[i+2], refPoints[i+3]];
 
-        for (let i = 0; i < basePoints.length - 2; i+=2) {
-            let vecA = [basePoints[i], basePoints[i+1]];
-            let vecB = [basePoints[i+2], basePoints[i+3]];
-
-            points = bInt.bezierInterpolation(vecA, vecB, this.interpolationPointsPerSegment, this.tensionFactor);
+            points = bInt.bezierInterpolation(vecA, vecB, 
+                this.advanced.interpolationPointsPerSegment, this.advanced.bezierTensionFactor);
 
             trajectoryPoints.push(points);
         }
 
-        let vecA = [basePoints[basePoints.length - 2], basePoints[basePoints.length - 1]];
-        let vecB = [basePoints[0], basePoints[1]];
+        vecA = [refPoints[refPoints.length - 2], refPoints[refPoints.length - 1]];
+        vecB = [refPoints[0], refPoints[1]];
 
-        points = bInt.bezierInterpolation(vecA, vecB, this.interpolationPointsPerSegment, this.tensionFactor);
+        points = bInt.bezierInterpolation(vecA, vecB, 
+            this.advanced.interpolationPointsPerSegment, this.advanced.bezierTensionFactor);
 
         trajectoryPoints.push(points);
 
         return HELPER.flattenArray(trajectoryPoints);
     }
 
-    public easingIntPoints (shape: Shapes): Array<number> {
-        let basePoints = shape.pnts;
+    public easingPoints (): Array<number> {
+        let refPoints = this.referencePoints();
         let trajectoryPoints = [];
         let points;
+        let vecA;
+        let vecB;
+        let geometry = this.geometry;
+        let polygons = geometry.polygons;
+        let eInt = new EasingInterpolation([this]);
+        let frames = (this.geometry.polygons - refPoints.length / 2) /
+            this.geometry.shapeSidesCoefficient;
 
-        let frames = (shape.polygons - basePoints.length / 2) / this.shapeSidesCoef(shape);
-
-        let eInt = new EasingInterpolation([shape], this.params);
-
-        for (let i = 0; i < basePoints.length - 2; i+=2) {
-            let vecA = [basePoints[i], basePoints[i+1]];
-            let vecB = [basePoints[i+2], basePoints[i+3]];
+        for (let i = 0; i < refPoints.length - 2; i+=2) {
+            vecA = [refPoints[i], refPoints[i+1]];
+            vecB = [refPoints[i+2], refPoints[i+3]];
 
             points = eInt.easingInterpolation(vecA, vecB, 0, frames,
-                eInt[this.easingType], eInt[this.easingType]);
+                eInt[this.advanced.xEasing], eInt[this.advanced.yEasing]);
 
             trajectoryPoints.push(points);
         }
 
-        let vecA = [basePoints[basePoints.length - 2], basePoints[basePoints.length - 1]];
-        let vecB = [basePoints[0], basePoints[1]];
+        vecA = [refPoints[refPoints.length - 2], refPoints[refPoints.length - 1]];
+        vecB = [refPoints[0], refPoints[1]];
 
         if (frames > 0) {
             points = eInt.easingInterpolation(vecA, vecB, 0, frames,
-                eInt[this.easingType], eInt[this.easingType]);
+                eInt[this.advanced.xEasing], eInt[this.advanced.yEasing]);
         } else {
-            points = basePoints;
+            points = refPoints;
         }
 
         trajectoryPoints.push(points);

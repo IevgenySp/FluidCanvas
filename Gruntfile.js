@@ -10,8 +10,7 @@ module.exports = function(grunt) {
 
     grunt.initConfig({
         dirs: {
-            dts:  'dts',
-            dist: './'
+            dist: './distribute/'
         },
 
         browserify: {
@@ -21,8 +20,20 @@ module.exports = function(grunt) {
                     debug: true
                 }
             },
+            'build': {
+                src: ['./index.ts'],
+                dest: '<%= dirs.dist %>fcanvas.js',
+                options: {
+                    watch: false,
+                    keepAlive: false,
+                    browserifyOptions: {
+                        plugin: ['tsify'],
+                        debug: true
+                    }
+                }
+            },
             'watch': {
-                src: ['<%=dirs.dts%>/*.d.ts', './index.ts'],
+                src: ['./index.ts'],
                 dest: '<%= dirs.dist %>fcanvas.js',
                 options: {
                     watch: true,
@@ -34,8 +45,8 @@ module.exports = function(grunt) {
                 }
             },
             'examples': {
-                src: ['<%=dirs.dts%>/*.d.ts', './Examples/index.ts'],
-                dest: '<%= dirs.dist %>/Examples/index.js',
+                src: ['./examples/index.ts'],
+                dest: '<%= dirs.dist %>/examples/index.min.js',
                 options: {
                     browserifyOptions: {
                         plugin: ['tsify'],
@@ -49,7 +60,7 @@ module.exports = function(grunt) {
             'main': {
                 files: [
                     {src: '<%= dirs.dist %>fcanvas.js',
-                        dest: '<%= dirs.dist %>fcanvas.minified.js'}
+                        dest: '<%= dirs.dist %>fcanvas.min.js'}
                 ]
             }
         },
@@ -67,6 +78,11 @@ module.exports = function(grunt) {
             }
         }
     });
+
+    grunt.registerTask('build', [
+        'browserify:build',
+        'uglify:main'
+    ]);
 
     grunt.registerTask('dev', [
         'browserify:watch'

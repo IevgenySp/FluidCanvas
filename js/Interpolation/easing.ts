@@ -2,32 +2,28 @@
  * Created by isp on 5/1/16.
  */
 
-import Interpolation from './interpolation';
-import {Circle, Rectangle, Polygon} from "../Interfaces/shapeInterfaces";
-import {InterpolationParameters} from './../Interfaces/interpolationInterfaces';
+import Interpolation from './Interpolation';
 import {INTERPOLATION_STEP} from './../Utils/globals';
-
-type Shapes = Circle | Rectangle | Polygon;
 
 export default class easingInterpolation extends Interpolation {
     xEasing: string; 
     yEasing: string;
     startFrame: number; 
     frames: number;
-    easingType: string;
-    constructor(shapes: Array<Shapes>, parameters: InterpolationParameters) {
-        super(shapes, parameters);
+    interpolationStep: string;
+    constructor(shapes: Array<any>) {
+        super(shapes);
 
-        this.xEasing    = parameters.xEasing;
-        this.yEasing    = parameters.yEasing;
-        this.startFrame = parameters.startFrame;
-        this.frames     = parameters.frames;
-        this.easingType = parameters.easingType;
+        this.xEasing           = shapes[0].advanced.xEasing;
+        this.yEasing           = shapes[0].advanced.yEasing;
+        this.startFrame        = shapes[0].advanced.startFrame;
+        this.frames            = shapes[0].advanced.frames;
+        this.interpolationStep = shapes[0].advanced.interpolationStep;
     }
 
     public iterator(): IterableIterator<Float32Array> {
-        let startPoints = this.sShape.points;
-        let endPoints = this.eShape.points;
+        let startPoints = this.startShape.geometry.points;
+        let endPoints = this.endShape.geometry.points;
         let trajectory = [];
         let params = this.getLinearParameters();
 
@@ -74,12 +70,12 @@ export default class easingInterpolation extends Interpolation {
         let yPoints;
         let concatPoints = [];
 
-        if (this.easingType === INTERPOLATION_STEP.linear) {
+        if (this.interpolationStep === INTERPOLATION_STEP.linear) {
             xPoints = this.coordinateLinearEasing(vectorStart[0], vectorEnd[0], startFrame, frames, xEasing);
             yPoints = this.coordinateLinearEasing(vectorStart[1], vectorEnd[1], startFrame, frames, yEasing);
         }
 
-        if (this.easingType === INTERPOLATION_STEP.time) {
+        if (this.interpolationStep === INTERPOLATION_STEP.time) {
             xPoints = this.coordinateTimeEasing(vectorStart[0], vectorEnd[0], startFrame, frames, xEasing);
             yPoints = this.coordinateTimeEasing(vectorStart[1], vectorEnd[1], startFrame, frames, yEasing);
         }

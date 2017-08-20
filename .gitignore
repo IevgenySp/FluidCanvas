@@ -1,0 +1,6 @@
+.idea
+distribute
+node_modules
+coverage
+reports
+doc

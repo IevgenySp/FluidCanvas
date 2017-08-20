@@ -2,88 +2,104 @@
  * Created by isp on 6/5/16.
  */
 
-import ShapesGeometry from './shapes';
 import {HELPER} from './../Utils/helper';
-import {INTERPOLATION, SYSTEM_PARAMETERS, SHAPES_PARAMETERS} from './../Utils/globals';
-import {Shapes,Circle, ShapeParameters} from "./../Interfaces/shapeInterfaces";
-import LinearInterpolation from './../Interpolation/linear';
-import BezierInterpolation from './../Interpolation/bezier';
-import EasingInterpolation from './../Interpolation/easing';
+import {INTERPOLATION, SYSTEM_PARAMETERS} from './../Utils/globals';
+import {Shape, Circle, Shapes,
+    ShapeAdvancedOptions, ShapeStyle} from "./../Interfaces/shapeInterfaces";
+import LinearInterpolation from './../Interpolation/Linear';
+import BezierInterpolation from './../Interpolation/Bezier';
+import EasingInterpolation from './../Interpolation/Easing';
 
-export default class CircleGeometry extends ShapesGeometry {
-    tensionFactor:                 number;
-    interpolationPointsPerSegment: number;
-    easingType:                    string;
-    interpolationType:             string;
-    constructor(parameters: ShapeParameters) {
-        super(parameters);
+export default class CircleGeometry {
+    geometry:   Shapes;
+    advanced:   ShapeAdvancedOptions;
+    type:       string;
+    style:      ShapeStyle;
+    isRendered: boolean;
+    minPolygons: number;
+    constructor(shape: Shape) {
+        this.geometry = shape.geometry;
+        this.advanced = shape.advanced;
+        this.type = shape.type;
+        this.style = shape.style;
+        this.isRendered = shape.isRendered;
 
-        this.tensionFactor                 = parameters.bezierTensionFactor;
-        this.interpolationPointsPerSegment = parameters.interpolationPointsPerSegment;
-        this.easingType                    = parameters.easingType;
-        this.interpolationType             = parameters.interpolationType;
+        this.minPolygons = this.setCirclePolygons(shape);
+
+        this.geometry.shapeSidesCoefficient = 1;
     }
 
-    public setPoints(shape: Shapes): Shapes {
+    public setShapeGeometry(): CircleGeometry {
+        this.geometry.polygons = this.normalizePolygons();
+
+        return this.setGeometry();
+    }
+
+    public resetShapeGeometry(): CircleGeometry {
+        return this.setGeometry();
+    }
+    
+    /**
+     * Define scope of points for circle shape
+     * @returns {CircleGeometry}
+     */
+    public setGeometry(): CircleGeometry {
         
-        switch (this.interpolationType) {
+        let geometry = this.geometry;
+        
+        switch (this.advanced.interpolation) {
             case INTERPOLATION.noInterpolation:
-                shape.polygons = this.setPolygons(shape);
-                shape.points = this.setPointToBuffer(
-                    this.linearPoints(shape, (<Circle>shape).startAngle));
-                break;
             case INTERPOLATION.linear:
-                shape.polygons = this.setPolygons(shape);
-                shape.points = this.setPointToBuffer(
-                    this.linearIntPoints(shape, (<Circle>shape).startAngle));
+                geometry.points = HELPER.setPointsToBuffer(
+                    this.linearPoints(),
+                    SYSTEM_PARAMETERS.dimensions);
                 break;
             case INTERPOLATION.bezier:
-                shape.polygons = this.setPolygons(shape);
-                shape.points = this.setPointToBuffer(
-                    this.bezierIntPoints(shape, (<Circle>shape).startAngle));
+                geometry.points = HELPER.setPointsToBuffer(
+                    this.bezierPoints(),
+                    SYSTEM_PARAMETERS.dimensions);
                 break;
             case INTERPOLATION.easing:
-                shape.polygons = this.setPolygons(shape);
-                shape.points = this.setPointToBuffer(
-                    this.easingIntPoints(shape, (<Circle>shape).startAngle));
+                geometry.points = HELPER.setPointsToBuffer(
+                    this.easingPoints(),
+                    SYSTEM_PARAMETERS.dimensions);
         }
-        
-        shape.polygons = this.setPolygons(shape);
-        shape.interpolation = this.interpolationType;
-        shape.geometry = this;        
 
-        return shape;
+        return this;
     }
 
-    public resetPoint(shape: Shapes): Shapes {
-        shape.points = this.setPointToBuffer(
-            this.linearPoints(shape, (<Circle>shape).startAngle));
-
-        return shape;
+    /**
+     * Define polygons number for circle shape
+     * @returns {number}
+     */
+    private normalizePolygons(): number {
+        return this.referencePoints().length / 2;
     }
     
-    public setPointToBuffer (points: Array<number>): Float32Array {
-        let pointsLength = points.length / 2;
-        let buffer = new ArrayBuffer(pointsLength * 4 * SYSTEM_PARAMETERS.dimentions);
-        let fl32XY = new Float32Array(buffer);
-
-        fl32XY.set(points);
-
-        return fl32XY;
-    }
-    
-    public linearPoints (shape: Shapes, startAngle?: number): Array<number> {
-        let pointsNumber = shape.pnts ? shape.pnts.length / 2 :
-            shape.polygons ? shape.polygons : SHAPES_PARAMETERS.polygons;
-        let angleShift = HELPER.toRadians(360 / pointsNumber);
-
+    private referencePoints(): Array<number> {
+        let geometry = this.geometry;
+        //let angleShift = HELPER.toRadians(360 / polygons);
+        let angleShift = HELPER.toRadians(SYSTEM_PARAMETERS.circleMinStep);
+        let polygons = 360 / SYSTEM_PARAMETERS.circleMinStep;
         let points = [];
         let pointsCounter = 0;
-        let sumAngle = HELPER.toRadians(startAngle) || HELPER.toRadians(45);
+        let sumAngle = HELPER.toRadians(
+                (<Circle>geometry).startAngle) || HELPER.toRadians(45);
+        
+        if (geometry.referencePoints) {
+            if (geometry.referencePoints.length / 2 < this.minPolygons) {
+                throw("Circle shape witch current radius should contain at least" + 
+                        this.minPolygons +  " reference points");
+            }
 
-        while (pointsCounter < pointsNumber) {
-            let x = (<Circle>shape).x + (<Circle>shape).r * Math.cos(sumAngle);
-            let y = (<Circle>shape).y + (<Circle>shape).r * Math.sin(sumAngle);
+            return geometry.referencePoints;
+        }
+        
+        while (pointsCounter < polygons) {
+            let x = (<Circle>geometry).x +
+                (<Circle>geometry).r * Math.cos(sumAngle);
+            let y = (<Circle>geometry).y +
+                (<Circle>geometry).r * Math.sin(sumAngle);
 
             points.push(x);
             points.push(y);
@@ -91,85 +107,128 @@ export default class CircleGeometry extends ShapesGeometry {
             sumAngle += angleShift;
             pointsCounter += 1;
         }
+
+        geometry.referencePoints = points;
+        geometry.polygons = polygons;
         
-        return points;
+        return geometry.referencePoints;
     }
 
-    public linearIntPoints (shape: Shapes, startAngleValue?: number): Array<number> {
-        let startAngle = startAngleValue || HELPER.toRadians(45);
-        let basePoints = this.linearPoints(shape, startAngle);
-        let trajectoryPoints = [];
-        let self = this;
-        let pointsInVector = basePoints.map(function(point) {
-            return self.interpolationPointsPerSegment;
-        });
+    private linearPoints (): Array<number> {
+        let refPoints = this.referencePoints();
+        let lineVectors = [];
+        let pointsPerSegment = [];
+        let sumVector;
+        let pointsInVector;
+        let geometry = this.geometry;
+        let polygons = geometry.polygons;
+        let lInt = new LinearInterpolation([this]);
 
-        let lInt = new LinearInterpolation([shape], this.params);
+        for (let i = 0; i < refPoints.length - 2; i += 2) {
+            lineVectors.push(HELPER.getVectorLength(
+                refPoints[i], refPoints[i+1],
+                refPoints[i+2], refPoints[i+3]));
+        }
 
-        trajectoryPoints = lInt.getPointsOnVectors(basePoints, pointsInVector);
+        lineVectors.push(HELPER.getVectorLength(
+            refPoints[refPoints.length - 2], refPoints[refPoints.length - 1],
+            refPoints[0], refPoints[1]));
 
-        let vecA = [basePoints[basePoints.length - 2], basePoints[basePoints.length - 1]];
-        let vecB = [basePoints[0], basePoints[1]];
-        let pnts = lInt.getPointsOnVector(vecA, vecB, self.interpolationPointsPerSegment);
+        sumVector = lineVectors.reduce((a, b) => { return a + b; }, 0);
 
-        trajectoryPoints.push(pnts);
+        for (let i = 0; i < lineVectors.length; i ++) {
+            pointsPerSegment.push(lineVectors[i] / sumVector);
+        }
 
-        return HELPER.flattenArray(trajectoryPoints);
+        pointsInVector = HELPER.splitPoints(pointsPerSegment, polygons);
+
+        return lInt.getPointsOnVectors(refPoints, pointsInVector);
     }
     
-    public bezierIntPoints (shape: Shapes, startAngleValue?: number): Array<number> {
-        let startAngle = startAngleValue || HELPER.toRadians(45);
-        let basePoints = this.linearPoints(shape, startAngle);
+    private bezierPoints (): Array<number> {
+        let refPoints = this.referencePoints();
         let trajectoryPoints = [];
         let points;
+        let vecA;
+        let vecB;
+        let geometry = this.geometry;
+        let polygons = geometry.polygons;
 
-        let bInt = new BezierInterpolation([shape], this.params);
+        if (polygons === refPoints.length / 2) {
+            return refPoints;
+        }
+        
+        let bInt = new BezierInterpolation([this]);
 
-        for (let i = 0; i < basePoints.length - 2; i+=2) {
-            let vecA = [basePoints[i], basePoints[i+1]];
-            let vecB = [basePoints[i+2], basePoints[i+3]];
+        for (let i = 0; i < refPoints.length - 2; i+=2) {
+            vecA = [refPoints[i], refPoints[i+1]];
+            vecB = [refPoints[i+2], refPoints[i+3]];
 
-            points = bInt.bezierInterpolation(vecA, vecB, this.interpolationPointsPerSegment, this.tensionFactor);
+            points = bInt.bezierInterpolation(vecA, vecB, 
+                this.advanced.interpolationPointsPerSegment, 
+                this.advanced.bezierTensionFactor);
 
             trajectoryPoints.push(points);
         }
 
-        let vecA = [basePoints[basePoints.length - 2], basePoints[basePoints.length - 1]];
-        let vecB = [basePoints[0], basePoints[1]];
+        vecA = [refPoints[refPoints.length - 2], refPoints[refPoints.length - 1]];
+        vecB = [refPoints[0], refPoints[1]];
 
-        points = bInt.bezierInterpolation(vecA, vecB, this.interpolationPointsPerSegment, this.tensionFactor);
+        points = bInt.bezierInterpolation(vecA, vecB, 
+            this.advanced.interpolationPointsPerSegment, 
+            this.advanced.bezierTensionFactor);
 
         trajectoryPoints.push(points);
         
         return HELPER.flattenArray(trajectoryPoints);
     }
     
-    public easingIntPoints (shape: Shapes, startAngleValue?: number): Array<number> {
-        let startAngle = startAngleValue || HELPER.toRadians(45);
-        let basePoints = this.linearPoints(shape, startAngle);
+    private easingPoints (): Array<number> {
+        let refPoints = this.referencePoints();
         let trajectoryPoints = [];
         let points;
+        let vecA;
+        let vecB;
+        let geometry = this.geometry;
+        let polygons = geometry.polygons;
 
-        let eInt = new EasingInterpolation([shape], this.params);
+        if (polygons === refPoints.length / 2) {
+            return refPoints;
+        }
+        
+        let eInt = new EasingInterpolation([this]);
 
-        for (let i = 0; i < basePoints.length - 2; i+=2) {
-            let vecA = [basePoints[i], basePoints[i+1]];
-            let vecB = [basePoints[i+2], basePoints[i+3]];
+        for (let i = 0; i < refPoints.length - 2; i+=2) {
+            vecA = [refPoints[i], refPoints[i+1]];
+            vecB = [refPoints[i+2], refPoints[i+3]];
 
-            points = eInt.easingInterpolation(vecA, vecB, 0, this.interpolationPointsPerSegment,
-                eInt[this.easingType], eInt[this.easingType]);
+            points = eInt.easingInterpolation(vecA, vecB, 0, 
+                this.advanced.interpolationPointsPerSegment,
+                eInt[this.advanced.xEasing], eInt[this.advanced.yEasing]);
 
             trajectoryPoints.push(points);
         }
 
-        let vecA = [basePoints[basePoints.length - 2], basePoints[basePoints.length - 1]];
-        let vecB = [basePoints[0], basePoints[1]];
+        vecA = [refPoints[refPoints.length - 2], refPoints[refPoints.length - 1]];
+        vecB = [refPoints[0], refPoints[1]];
 
-        points = eInt.easingInterpolation(vecA, vecB, 0, this.interpolationPointsPerSegment,
-            eInt[this.easingType], eInt[this.easingType]);
+        points = eInt.easingInterpolation(vecA, vecB, 0, 
+            this.advanced.interpolationPointsPerSegment,
+            eInt[this.advanced.xEasing], eInt[this.advanced.yEasing]);
 
         trajectoryPoints.push(points);
 
         return HELPER.flattenArray(trajectoryPoints);
+    }
+
+    private setCirclePolygons(shape: Shape): number {
+        let circleLength = 2 * Math.PI * (<Circle>shape.geometry).r;
+        let minStep = SYSTEM_PARAMETERS.circleMinStep;
+
+        if (circleLength < minStep) {
+            return 1;
+        }
+
+        return Math.round(circleLength / minStep);
     }
 }

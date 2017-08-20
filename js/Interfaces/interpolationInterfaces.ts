@@ -12,15 +12,6 @@ export interface InterpolationInterface {
     endVector: Array<number>;
 }
 
-export interface InterpolationParameters {
-    xEasing?: string;
-    yEasing?: string;
-    startFrame?: number;
-    frames?: number;
-    bezierTensionFactor?: number;
-    easingType?: string;
-}
-
 export interface InterpolationIterator {
     iterator(): IterableIterator<Float32Array>
 }

@@ -4,6 +4,7 @@
 
 body {
     margin: 0;
+    background: #005760;
 }
 
 .mainWidget {
@@ -71,3 +72,33 @@ div.buttons2 {
     margin: 5px;
     margin-top: 330px;
 }
+
+canvas#animationLayer {
+    display: none;
+    position: absolute;
+    top: 0;
+}
+
+@font-face {
+    font-family: "MuseoSansLight";
+    src: url("../fonts/MuseoSansLight/MuseoSansLight.eot");
+    src: url("../fonts/MuseoSansLight/MuseoSansLight.eot?#iefix")format("embedded-opentype"),
+    url("../fonts/MuseoSansLight/MuseoSansLight.woff") format("woff"),
+    url("../fonts/MuseoSansLight/MuseoSansLight.ttf") format("truetype");
+    font-style: normal;
+    font-weight: normal;
+}
+
+div.header {
+    width: 100%;
+    height: 30px;
+    position: absolute;
+    text-align: center;
+    padding: 15px;
+    color: #fff;
+    font-family: MuseoSansLight, sans-serif;
+    text-transform: uppercase;
+    font-size: 18px;
+}
+
+

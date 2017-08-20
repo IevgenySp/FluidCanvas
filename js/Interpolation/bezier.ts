@@ -2,26 +2,22 @@
  * Created by isp on 5/1/16.
  */
 
-import Interpolation from './interpolation';
-import {SYSTEM_PARAMETERS, SHAPES_PARAMETERS} from "./../Utils/globals";
-import {Circle, Rectangle, Polygon} from "../Interfaces/shapeInterfaces";
-import {InterpolationParameters} from './../Interfaces/interpolationInterfaces';
-
-type Shapes = Circle | Rectangle | Polygon;
+import Interpolation from './Interpolation';
+import {SYSTEM_PARAMETERS} from "./../Utils/globals";
 
 export default class BezierInterpolation extends Interpolation {
     frames: number;
     tensionFactor: number;
-    constructor(shapes: Array<Shapes>, parameters: InterpolationParameters) {
-        super(shapes, parameters);
+    constructor(shapes: Array<any>) {
+        super(shapes);
         
-        this.frames        = parameters.frames;
-        this.tensionFactor = parameters.bezierTensionFactor;
+        this.frames        = shapes[0].advanced.frames;
+        this.tensionFactor = shapes[0].advanced.bezierTensionFactor;
     }
 
     public iterator(): IterableIterator<Float32Array> {
-        let startPoints = this.sShape.points;
-        let endPoints = this.eShape.points;
+        let startPoints = this.startShape.geometry.points;
+        let endPoints = this.endShape.geometry.points;
         let trajectory = [];
         let params = this.getLinearParameters();
 
@@ -47,7 +43,7 @@ export default class BezierInterpolation extends Interpolation {
 
             trajectory.push(pnts);
         }
-        
+
         return trajectory[Symbol.iterator]();
     }
 
@@ -57,7 +53,7 @@ export default class BezierInterpolation extends Interpolation {
 
         let pnts = [vectorStart[0], vectorStart[1], vectorEnd[0], vectorEnd[1]];
         let tension = tensionFactor ? tensionFactor : 
-            this.tensionFactor ? this.tensionFactor : SHAPES_PARAMETERS.bezierTension;
+            this.tensionFactor ? this.tensionFactor : SYSTEM_PARAMETERS.bezierTension;
 
         return this.cardinalSplines(pnts, tension, false, frames);
     }
@@ -68,7 +64,7 @@ export default class BezierInterpolation extends Interpolation {
 
         let tension = tensionFactor;
         let isClosed = isClosedContour || false;
-        let numOfSegments = segmentsNumber || SHAPES_PARAMETERS.bezierSegmentsNumber;
+        let numOfSegments = segmentsNumber || SYSTEM_PARAMETERS.bezierSegmentsNumber;
 
         let points = [], bezierPoints = [];   // clone array
         let x, y;                             // x,y coords

@@ -2,426 +2,509 @@
  * Created by isp on 4/10/16.
  */
 
-import * as coreJs from 'core-js';
+/**
+ * Adaptation for retina display
+ */
+var PIXEL_RATIO = (function () {
+    var ctx = document.createElement("canvas").getContext("2d"),
+        dpr = window.devicePixelRatio || 1,
+        bsr = ctx.webkitBackingStorePixelRatio ||
+            ctx.mozBackingStorePixelRatio ||
+            ctx.msBackingStorePixelRatio ||
+            ctx.oBackingStorePixelRatio ||
+            ctx.backingStorePixelRatio || 1;
 
-import FluidCanvas from './../js/fluidCanvas';
+    return dpr / bsr;
+})();
 
-let canvas: any = document.getElementsByClassName("animizer-canvas-main")[0];
-canvas.width = 1000;
-canvas.height = 300;
-let context = canvas.getContext('2d');
+createHiDPICanvas = function(w, h, ratio) {
+    if (!ratio) { ratio = PIXEL_RATIO; }
+    var can = document.getElementsByClassName("animizer-canvas-main")[0];
+    can.width = w * ratio;
+    can.height = h * ratio;
+    can.style.width = w + "px";
+    can.style.height = h + "px";
+    can.getContext("2d").setTransform(ratio, 0, 0, ratio, 0, 0);
+    return can;
+};
 
-let fluidCanvas = new FluidCanvas(context);
-let constructor = fluidCanvas.shapesConstructor;
+var canvas = createHiDPICanvas(1000, 1000);
+var context = canvas.getContext('2d');
 
-let vBarsParams = [
-    [50, 150, 50, 70],
-    [105, 100, 50, 120],
-    [160, 10, 50, 210],
-    [215, 200, 50, 20],
-    [270, 180, 50, 40]
-];
+// SHAPES DEFINITION
 
-let v2BarsParams = [
-    [50, 20, 50, 200],
-    [105, 50, 50, 170],
-    [160, 200, 50, 20],
-    [215, 80, 50, 140],
-    [270, 150, 50, 70]
-];
+var initRect = {
+    x: 50,
+    y: 148,
+    width: 100,
+    height: 2,
+    points: [50,148,150,148,150,150,50,150],
+    advanced: {
+        isPolygonRender: false,
+        drawAsCanvasShape: false,
+        interpolation: 'linear'
+    },
+    style: {
+        isFill: true,
+        color: '#f78518'
+    }
+};
 
-let circlesParams = [
-    [215, 10, 25, 100],
-    [215, 25, 52.5, 80],
-    [215, 5, 80, 200],
-    [215, 14, 107.5, 60],
-    [215, 20, 135, 50]
-];
+var rect = {
+    x: 50,
+    y: 50,
+    width: 100,
+    height: 100,
+    points: [50,50,150,50,150,150,50,150],
+    advanced: {
+        isPolygonRender: false,
+        drawAsCanvasShape: false,
+        interpolation: 'linear'
+    },
+    style: {
+        isFill: true,
+        color: '#f78518'
+    }
+};
 
-let linesParams = [
-    [50, 50, 75, 75, 105, 100],
-    [105, 100, 130, 20, 160, 170],
-    [160, 170, 175, 80, 215, 10],
-    [215, 10, 230, 60, 270, 150],
-    [270, 150, 295, 50, 320, 120]
-];
+var testRect = {
+    x: 150,
+    y: 50,
+    width: 70,
+    height: 70,
+    points: [150,50,170,50,220,50,220,70,220,80,220,120,200,120,190,120,180,120,150,120,150,80,150,70],
+    advanced: {
+        isPolygonRender: true,
+        drawAsCanvasShape: false,
+        interpolation: 'linear'
+    },
+    style: {
+        isFill: true
+    }
+};
 
-let lineFlatParams = [
-    50, 50, 75, 75, 105, 100,
-    105, 100, 130, 20, 160, 170,
-    160, 170, 175, 80, 215, 10,
-    215, 10, 230, 60, 270, 150,
-    270, 150, 295, 50, 320, 120
-];
+var circ = {
+    x: 250,
+    y: 100,
+    r: 50,
+    startAngle: 215,
+    advanced: {
+        isPolygonRender: false,
+        drawAsCanvasShape: true
+    },
+    style: {
+        isFill: true,
+        color: '#1E88E5'
+    }
+};
 
-let polygons = 50;
+var tri = {
+    points: [325, 150, 375, 50, 425, 150],
+    advanced: {
+        isPolygonRender: false,
+        drawAsCanvasShape: true
+    },
+    style: {
+        isFill: true,
+        color: '#8BC34A'
+    }
+};
 
-let colors = ['#006E90', '#F18F01', '#ADCAD6', '#99C24D', '#41BBD9'];
+var lin = {
+    points: [475, 50, 495, 80, 515, 150, 545, 100, 575, 50],
+    //points: [575, 50, 545, 100, 515, 150, 495, 80, 475, 50],
+    advanced: {
+        isPolygonRender: false,
+        drawAsCanvasShape: false,
+        interpolation: 'linear'
+    },
+    style: {
+        isFill: true,
+        color: '#FFEA00',
+        lineWidth: 1
+    }
+};
 
-let params = {
-    xEasing: 'easeOutExpo',
-    yEasing: 'easeOutExpo'
+var str = {
+    x: 675,
+    y: 100,
+    spikes: 12,
+    outerRadius: 60,
+    innerRadius: 35,
+    advanced: {
+        isPolygonRender: false,
+        drawAsCanvasShape: false,
+        interpolation: 'linear'
+    },
+    style: {
+        isFill: true,
+        color: '#CFD8DC'
+    }
+};
+
+var text1 = {
+    text: 'Rectangle',
+    x: 73,
+    y: 168,
+    style: {
+        font: '12px MuseoSansLight, sans-serif',
+        fillStyle: '#ffffff'
+    }
+};
+
+var text2 = {
+    text: 'Circle',
+    x: 235,
+    y: 168,
+    style: {
+        font: '12px MuseoSansLight, sans-serif',
+        fillStyle: '#ffffff'
+    }
+};
+
+var text3 = {
+    text: 'Triangle',
+    x: 355,
+    y: 168,
+    style: {
+        font: '12px MuseoSansLight, sans-serif',
+        fillStyle: '#ffffff'
+    }
+};
+
+var text4 = {
+    text: 'Line',
+    x: 505,
+    y: 168,
+    style: {
+        font: '12px MuseoSansLight, sans-serif',
+        fillStyle: '#ffffff'
+    }
+};
+
+var text5 = {
+    text: 'Star',
+    x: 665,
+    y: 168,
+    style: {
+        font: '12px MuseoSansLight, sans-serif',
+        fillStyle: '#ffffff'
+    }
+};
+
+var text6 = {
+    text: 'Work with Canvas has never been so easy!',
+    x: 285,
+    y: 515,
+    style: {
+        font: '12px MuseoSansLight, sans-serif',
+        fillStyle: '#ffffff'
+    }
 };
 
 
-function buildBars(params, polygons) {
-    let shapes: Map<any, any> = new coreJs.Map();
-    let shape;
+var fluidCanvas = new FluidCanvas(context);
 
-    for (let i = 0; i < params.length; i++) {
-        let bar = constructor.getRectangle(
-            params[i][0],
-            params[i][1],
-            params[i][2],
-            params[i][3], polygons);
+var rectangle = fluidCanvas.shape('rectangle', rect);
+var circle = fluidCanvas.shape('circle', circ);
+var triangle = fluidCanvas.shape('polygon', tri);
+var line = fluidCanvas.shape('line', lin);
+var star = fluidCanvas.shape({type:'polygon', subtype: 'star'}, str);
+var initRectangle = fluidCanvas.shape('rectangle', initRect);
 
-        constructor.setStyle(bar, 'color', colors[i]);
-        constructor.setStyle(bar, 'isFill', true);
+var rectText = fluidCanvas.shape('text', text1);
+var circText = fluidCanvas.shape('text', text2);
+var triText = fluidCanvas.shape('text', text3);
+var linText = fluidCanvas.shape('text', text4);
+var strText = fluidCanvas.shape('text', text5);
+var flagText = fluidCanvas.shape('text', text6);
 
-        shape = fluidCanvas.defineShape(bar,
-            {renderType: 'line', interpolationType: 'noInterpolation'});
+var backgroundRectangle = fluidCanvas.shape('rectangle', rect);
+var backgroundCircle = fluidCanvas.shape('circle', circ);
+var backgroundTriangle = fluidCanvas.shape('polygon', tri);
+var backgroundLine = fluidCanvas.shape('line', lin);
+var backgroundStar = fluidCanvas.shape({type:'polygon', subtype: 'star'}, str);
 
-        fluidCanvas.storage.setShapeCompositeId(shape);
+backgroundRectangle.style.color = '#094a50';
+fluidCanvas.setRenderState(backgroundRectangle, true);
+fluidCanvas.render(backgroundRectangle);
+backgroundCircle.style.color = '#094a50';
+fluidCanvas.setRenderState(backgroundCircle, true);
+fluidCanvas.render(backgroundCircle);
+backgroundTriangle.style.color = '#094a50';
+fluidCanvas.setRenderState(backgroundTriangle, true);
+fluidCanvas.render(backgroundTriangle);
+backgroundLine.style.color = '#094a50';
+fluidCanvas.setRenderState(backgroundLine, true);
+fluidCanvas.render(backgroundLine);
+backgroundStar.style.color = '#094a50';
+fluidCanvas.setRenderState(backgroundStar, true);
+fluidCanvas.render(backgroundStar);
 
-        shapes.set(i, shape);
+function rectRender() {
+    fluidCanvas.setRenderState(rectText, true);
+    fluidCanvas.setRenderState(circText, false);
+    fluidCanvas.setRenderState(triText, false);
+    fluidCanvas.setRenderState(linText, false);
+    fluidCanvas.setRenderState(strText, false);
+
+    fluidCanvas.render(rectText, true);
+
+    this.animate(initRectangle, rectangle);
+}
+
+function circRender() {
+    fluidCanvas.setRenderState(rectText, false);
+    fluidCanvas.setRenderState(circText, true);
+    fluidCanvas.setRenderState(triText, false);
+    fluidCanvas.setRenderState(linText, false);
+    fluidCanvas.setRenderState(strText, false);
+
+    fluidCanvas.render(circText, true);
+
+    this.animate(rectangle, circle);
+}
+
+function triRender() {
+    fluidCanvas.setRenderState(rectText, false);
+    fluidCanvas.setRenderState(circText, false);
+    fluidCanvas.setRenderState(triText, true);
+    fluidCanvas.setRenderState(linText, false);
+    fluidCanvas.setRenderState(strText, false);
+
+    fluidCanvas.render(triText, true);
+
+    this.animate(circle, triangle);
+}
+
+function linRender() {
+    fluidCanvas.setRenderState(rectText, false);
+    fluidCanvas.setRenderState(circText, false);
+    fluidCanvas.setRenderState(triText, false);
+    fluidCanvas.setRenderState(linText, true);
+    fluidCanvas.setRenderState(strText, false);
+
+    fluidCanvas.render(linText, true);
+
+    this.animate(triangle, line);
+}
+
+function strRender() {
+    fluidCanvas.setRenderState(rectText, false);
+    fluidCanvas.setRenderState(circText, false);
+    fluidCanvas.setRenderState(triText, false);
+    fluidCanvas.setRenderState(linText, false);
+    fluidCanvas.setRenderState(strText, true);
+
+    fluidCanvas.render(strText, true);
+
+    this.animate(line, star);
+}
+
+function reverseLinRender() {
+    fluidCanvas.setRenderState(rectText, false);
+    fluidCanvas.setRenderState(circText, false);
+    fluidCanvas.setRenderState(triText, false);
+    fluidCanvas.setRenderState(linText, true);
+    fluidCanvas.setRenderState(strText, false);
+
+    fluidCanvas.render(linText, true);
+
+    //var line = fluidCanvas.shape('line', lin);
+
+    this.animate(star, line);
+}
+
+function reverseTriRender() {
+    fluidCanvas.setRenderState(rectText, false);
+    fluidCanvas.setRenderState(circText, false);
+    fluidCanvas.setRenderState(triText, true);
+    fluidCanvas.setRenderState(linText, false);
+    fluidCanvas.setRenderState(strText, false);
+
+    fluidCanvas.render(triText, true);
+
+    //var triangle = fluidCanvas.shape('polygon', tri);
+
+    this.animate(line, triangle);
+}
+
+var usaFlagShapes = [];
+
+function generateStripes() {
+    var initX = 200;
+    var initY = 300;
+    var width = 400;
+    var height = 15;
+    var firstColor = '#b12035';
+    var secondColor = '#ffffff';
+    var stripesAmount = 13;
+
+    for (var i = 0; i < stripesAmount; i++) {
+        var color = i % 2 === 0 ? firstColor : secondColor;
+
+        var stripe = {
+            x: initX,
+            y: initY + height * i,
+            width: width,
+            height: height,
+            //points: [50,50,150,50,150,150,50,150],
+            advanced: {
+                isPolygonRender: false,
+                drawAsCanvasShape: true,
+                interpolation: 'linear'
+            },
+            style: {
+                isFill: true,
+                color: color
+            }
+        };
+
+        var flagStripe = fluidCanvas.shape('rectangle', stripe);
+
+        usaFlagShapes.push(flagStripe);
+        //fluidCanvas.setRenderState(flagStripe, true);
+        //fluidCanvas.render(flagStripe);
+    }
+}
+
+function generateStarsBackground() {
+    var starsBackground = {
+        x: 200,
+        y: 300,
+        width: 160,
+        height: 105,
+        //points: [50,50,150,50,150,150,50,150],
+        advanced: {
+            isPolygonRender: false,
+            drawAsCanvasShape: true,
+            interpolation: 'linear'
+        },
+        style: {
+            isFill: true,
+            color: '#3A3A6C'
+        }
+    };
+
+    var flagStarsBackground = fluidCanvas.shape('rectangle', starsBackground);
+
+    usaFlagShapes.push(flagStarsBackground);
+    //fluidCanvas.setRenderState(flagStarsBackground, true);
+    //fluidCanvas.render(flagStarsBackground);
+}
+
+function generateStars() {
+    var oddStars = 6;
+    var evenStars = 5;
+    var oddStarsRows = 5;
+    var evenStarsRows = 4;
+    var initOddX = 217;
+    var initOddY = 312;
+    var initEvenX = 230;
+    var initEvenY = 322;
+
+    for (var f = 0; f < oddStarsRows; f++) {
+        for (var i = 0; i < oddStars; i++) {
+            var oddStar = {
+                x: initOddX + 25 * i,
+                y: initOddY + 20 * f,
+                spikes: 5,
+                outerRadius: 7,
+                innerRadius: 3,
+                advanced: {
+                    isPolygonRender: false,
+                    drawAsCanvasShape: false,
+                    interpolation: 'linear'
+                },
+                style: {
+                    isFill: true,
+                    color: '#ffffff'
+                }
+            };
+
+            var flagOddStars = fluidCanvas.shape({type:'polygon', subtype: 'star'}, oddStar);
+
+            usaFlagShapes.push(flagOddStars);
+            //fluidCanvas.setRenderState(flagOddStars, true);
+            //fluidCanvas.render(flagOddStars);
+        }
     }
 
-    fluidCanvas.storage.incrementCompositeId();
+    for (var k = 0; k < evenStarsRows; k++) {
+        for (var j = 0; j < evenStars; j++) {
+            var evenStar = {
+                x: initEvenX + 25 * j,
+                y: initEvenY + 20 * k,
+                spikes: 5,
+                outerRadius: 7,
+                innerRadius: 3,
+                advanced: {
+                    isPolygonRender: false,
+                    drawAsCanvasShape: false,
+                    interpolation: 'linear'
+                },
+                style: {
+                    isFill: true,
+                    color: '#ffffff'
+                }
+            };
 
-    return shapes;
-}
+            var flagEvenStars = fluidCanvas.shape({type:'polygon', subtype: 'star'}, evenStar);
 
-function buildCircles(params, polygons) {
-    let shapes: Map<any, any> = new coreJs.Map();
-    let shape;
-
-    for (let i = 0; i < params.length; i++) {
-        let circle = constructor.getCircle(
-            params[i][0],
-            params[i][1],
-            params[i][2],
-            params[i][3], polygons);
-
-        constructor.setStyle(circle, 'color', colors[i]);
-        constructor.setStyle(circle, 'isFill', true);
-
-        shape = fluidCanvas.defineShape(circle,
-            {renderType: 'line', interpolationType: 'noInterpolation'});
-
-        fluidCanvas.storage.setShapeCompositeId(shape);
-
-        shapes.set(i, shape);
+            usaFlagShapes.push(flagEvenStars);
+            //fluidCanvas.setRenderState(flagEvenStars, true);
+            //fluidCanvas.render(flagEvenStars);
+        }
     }
-
-    fluidCanvas.storage.incrementCompositeId();
-
-    return shapes;
 }
 
-function buildLines(params, polygons) {
-    let shapes: Map<any, any> = new coreJs.Map();
-    let shape;
-
-    for (let i = 0; i < params.length; i++) {
-        let line = constructor.getLine(params[i], polygons);
-
-        constructor.setStyle(line, 'color', colors[i]);
-        constructor.setStyle(line, 'isFill', true);
-        constructor.setStyle(line, 'isStroke', true);
-
-        shape = fluidCanvas.defineShape(line,
-            {renderType: 'line', interpolationType: 'noInterpolation'});
-
-        fluidCanvas.storage.setShapeCompositeId(shape);
-
-        shapes.set(i, shape);
-    }
-
-    fluidCanvas.storage.incrementCompositeId();
-
-    return shapes;
+function generateUSAFlag() {
+    generateStripes();
+    generateStarsBackground();
+    generateStars();
 }
 
-function buildBezierLines(params, polygons) {
-    let shapes: Map<any, any> = new coreJs.Map();
-    let shape;
+// USA FLAG
 
-    for (let i = 0; i < params.length; i++) {
-        let line = constructor.getBezierLine(params[i], polygons);
+generateUSAFlag();
 
-        constructor.setStyle(line, 'color', colors[i]);
-        constructor.setStyle(line, 'isFill', true);
-        constructor.setStyle(line, 'isStroke', true);
+function flagRender() {
+    fluidCanvas.setRenderState(rectText, false);
+    fluidCanvas.setRenderState(circText, false);
+    fluidCanvas.setRenderState(triText, false);
+    fluidCanvas.setRenderState(linText, false);
+    fluidCanvas.setRenderState(strText, false);
+    fluidCanvas.setRenderState(flagText, true);
 
-        shape = fluidCanvas.defineShape(line,
-            {renderType: 'line', interpolationType: 'noInterpolation'});
+    fluidCanvas.render(flagText, true);
 
-        fluidCanvas.storage.setShapeCompositeId(shape);
-
-        shapes.set(i, shape);
-    }
-
-    fluidCanvas.storage.incrementCompositeId();
-
-    return shapes;
+    this.animate([triangle], usaFlagShapes);
 }
 
-function buildLine(params, polygons) {
-    let line = constructor.getLine(params, polygons);
+function flagReverseRender() {
+    fluidCanvas.setRenderState(rectText, true);
+    fluidCanvas.setRenderState(circText, true);
+    fluidCanvas.setRenderState(triText, true);
+    fluidCanvas.setRenderState(linText, true);
+    fluidCanvas.setRenderState(strText, true);
+    fluidCanvas.setRenderState(flagText, false);
 
-    constructor.setStyle(line, 'color', colors[0]);
-    constructor.setStyle(line, 'isFill', true);
-    constructor.setStyle(line, 'isStroke', true);
+    var rectangle = fluidCanvas.shape('rectangle', rect);
+    var circle = fluidCanvas.shape('circle', circ);
+    var triangle = fluidCanvas.shape('polygon', tri);
+    var line = fluidCanvas.shape('line', lin);
+    var star = fluidCanvas.shape({type:'polygon', subtype: 'star'}, str);
 
-    return fluidCanvas.defineShape(line,
-        {renderType: 'line', interpolationType: 'noInterpolation'});
+    this.animate(usaFlagShapes, [rectangle, circle, triangle, line, star]);
 }
 
-let vShapes = buildBars(vBarsParams, polygons);
-//let v2Shapes = buildBars(v2BarsParams, polygons);
-let cShapes = buildCircles(circlesParams, polygons);
-let lShapes = buildLines(linesParams, polygons);
-let lBShapes = buildBezierLines(linesParams, polygons);
-let lShape = buildLine(lineFlatParams, polygons);
 
-let curShape = mapToArr(vShapes);
-
-vShapes.forEach(function(shape, key) {
-    fluidCanvas.render(shape, 'line');
-});
-
-let barsButton = document.getElementsByClassName('bars')[0];
-let circlesButton = document.getElementsByClassName('circles')[0];
-let linesButton = document.getElementsByClassName('lines')[0];
-let bezierLinesButton = document.getElementsByClassName('bezierLines')[0];
-let compositeLineButton = document.getElementsByClassName('compositeLine')[0];
-
-barsButton.addEventListener('click', function() {
-    let ts = fluidCanvas.transform(curShape, mapToArr(vShapes), 'easing', params);
-
-    curShape = ts.map(function(obj) {
-        return obj.shape;
-    });
-
-    fluidCanvas.animate();
-});
-
-circlesButton.addEventListener('click', function() {
-    let ts = fluidCanvas.transform(curShape, mapToArr(cShapes), 'easing', params);
-
-    curShape = ts.map(function(obj) {
-        return obj.shape;
-    });
-
-    fluidCanvas.animate();
-});
-
-linesButton.addEventListener('click', function() {
-    let ts = fluidCanvas.transform(curShape, mapToArr(lShapes), 'easing', params);
-
-    curShape = ts.map(function(obj) {
-        return obj.shape;
-    });
-
-    fluidCanvas.animate();
-});
-
-bezierLinesButton.addEventListener('click', function() {
-    let ts = fluidCanvas.transform(curShape, mapToArr(lBShapes), 'easing', params);
-
-    curShape = ts.map(function(obj) {
-        return obj.shape;
-    });
-
-    fluidCanvas.animate();
-});
-
-compositeLineButton.addEventListener('click', function() {
-    let ts = fluidCanvas.transform(curShape, [lShape], 'easing', params);
-
-    curShape = [lShape];
-
-    fluidCanvas.animate();
-});
-
-
-function mapToArr (map: Map<any, any>): Array<any> {
-    let newArr = [];
-
-    map.forEach(function(val) {
-        newArr.push(val);
-    });
-
-    return newArr;
-}
-
-/*let canvas2: any = document.getElementsByClassName("animizer-canvas-background")[0];
- canvas2.width = 1000;
- canvas2.height = 1000;
- let context2 = canvas2.getContext('2d');
-
-
- let circle1 = {
- type: 'circle',
- startAngle: 215,
- r: 50,
- x: 100,
- y: 100,
- polygons: 50,
- };
-
- let circle2 = {
- type: 'circle',
- startAngle: 215,
- r: 100,
- x: 750,
- y: 250,
- polygons: 50
- };
-
- let rectangle = {
- type: 'rectangle',
- x: 250,
- y: 400,
- width: 75,
- height: 75,
- polygons: 50
- };
-
- let line = {
- type: 'line',
- pnts: [200, 200, 250, 300, 500, 400, 700, 25],
- polygons: 50
- };
-
- let line2 = {
- type: 'line',
- pnts: [300, 300, 400, 300, 400, 300, 300, 300],
- polygons: 50
- };
-
- let star = {
- type: 'polygon',
- pnts: [129.38926261462365, 140.45084971874738, 100, 125, 70.61073738537632, 140.45084971874735, 76.22358709262116, 107.72542485937367, 52.447174185242325, 84.54915028125262, 85.30536869268818, 79.77457514062631, 100, 50, 114.69463130731182, 79.77457514062631, 147.55282581475768, 84.54915028125264, 123.77641290737884, 107.72542485937369, 129.38926261462365, 140.45084971874738],
- polygons: 50
- };
-
- let bezierCurve = {
- type: 'bezierLine',
- pnts: [200, 200, 250, 300, 500, 400, 700, 200, 600, 100],
- polygons: 50
- };*/
-
-
-
-let canvas2: any = document.getElementsByClassName("animizer-canvas-main2")[0];
-canvas2.width = 1000;
-canvas2.height = 300;
-let context2 = canvas2.getContext('2d');
-
-let fluidCanvas2 = new FluidCanvas(context2);
-let constructor2 = fluidCanvas2.shapesConstructor;
-
-let circlesParams2 = [
-    [215, 10, 25, 100],
-    [215, 25, 52.5, 150]
-];
-
-let linesParams2 = [
-    [50, 50, 100, 75, 105, 100],
-    [105, 100, 180, 20, 160, 170],
-    [160, 170, 175, 100, 215, 10],
-    [215, 50, 230, 60, 270, 150],
-    [270, 150, 295, 150, 320, 120]
-];
-
-function buildCircles2(params, polygons) {
-    let shapes: Map<any, any> = new coreJs.Map();
-    let shape;
-
-    for (let i = 0; i < params.length; i++) {
-        let circle = constructor.getCircle(
-            params[i][0],
-            params[i][1],
-            params[i][2],
-            params[i][3], polygons);
-
-        constructor2.setStyle(circle, 'color', colors[i]);
-        constructor2.setStyle(circle, 'isFill', true);
-
-        shape = fluidCanvas2.defineShape(circle,
-            {renderType: 'line', interpolationType: 'noInterpolation'});
-
-        fluidCanvas2.storage.setShapeCompositeId(shape);
-
-        shapes.set(i, shape);
-    }
-
-    fluidCanvas2.storage.incrementCompositeId();
-
-    return shapes;
-}
-
-function buildLines2(params, polygons) {
-    let shapes: Map<any, any> = new coreJs.Map();
-    let shape;
-
-    for (let i = 0; i < params.length; i++) {
-        let line = constructor2.getLine(params[i], polygons);
-
-        constructor2.setStyle(line, 'color', colors[i]);
-        constructor2.setStyle(line, 'isFill', true);
-        constructor2.setStyle(line, 'isStroke', true);
-
-        shape = fluidCanvas2.defineShape(line,
-            {renderType: 'line', interpolationType: 'noInterpolation'});
-
-        fluidCanvas2.storage.setShapeCompositeId(shape);
-
-        shapes.set(i, shape);
-    }
-
-    fluidCanvas2.storage.incrementCompositeId();
-
-    return shapes;
-}
-
-let c2Shapes = buildCircles2(circlesParams2, polygons);
-let l2Shapes = buildLines2(linesParams2, polygons);
-
-let curShape2 = mapToArr(c2Shapes);
-
-c2Shapes.forEach(function(shape, key) {
-    fluidCanvas2.render(shape, 'line');
-});
-
-/*l2Shapes.forEach(function(shape, key) {
-    fluidCanvas2.render(shape, 'line');
-});*/
-
-let circles2Button = document.getElementsByClassName('circles2')[0];
-let lines2Button = document.getElementsByClassName('lines2')[0];
-
-circles2Button.addEventListener('click', function() {
-    let ts;
-
-    ts = fluidCanvas2.transform(curShape2, mapToArr(c2Shapes), 'easing', params);
-
-    curShape2 = ts.map(function(obj) {
-        return obj.shape;
-    });
-
-    fluidCanvas2.animate();
-});
-
-lines2Button.addEventListener('click', function() {
-    let ts;
-
-     ts = fluidCanvas2.transform(curShape2, mapToArr(l2Shapes), 'easing', params);
-
-     curShape2 = ts.map(function(obj) {
-        return obj.shape;
-     });
-
-     fluidCanvas2.animate();
-});
+setTimeout(rectRender.bind(fluidCanvas, initRectangle, rectangle), 0);
+setTimeout(circRender.bind(fluidCanvas, rectangle, circle), 3000);
+setTimeout(triRender.bind(fluidCanvas, circle, triangle), 5000);
+setTimeout(linRender.bind(fluidCanvas, triangle, line), 7000);
+setTimeout(strRender.bind(fluidCanvas, line, star), 9000);
+setTimeout(reverseLinRender.bind(fluidCanvas, star, line), 11000);
+setTimeout(reverseTriRender.bind(fluidCanvas, line, triangle), 13000);
+setTimeout(flagRender.bind(fluidCanvas, [triangle], usaFlagShapes), 15000);
+setTimeout(flagReverseRender.bind(fluidCanvas, usaFlagShapes, [rectangle, circle, triangle, line, star]), 17000);

@@ -3,7 +3,8 @@
  */
 
 export = (context: CanvasRenderingContext2D,
-          points: Float32Array): void => {
+          points: Float32Array,
+          linkEnds?: boolean): void => {
 
     let eArr = points[Symbol.iterator]();
     let counter = 0;
@@ -18,5 +19,7 @@ export = (context: CanvasRenderingContext2D,
         counter++;
     }
 
-    context.lineTo(firstX, firstY);
+    if (linkEnds) {
+        context.lineTo(firstX, firstY);
+    }
 };

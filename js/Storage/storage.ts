@@ -2,65 +2,52 @@
  * Created by isp on 6/11/16.
  */
 
-import {Shapes} from "./../Interfaces/shapeInterfaces";
-import * as coreJs from 'core-js';
+import {Shape} from "./../Interfaces/shapeInterfaces";
+import {HELPER} from "./../Utils/helper";
 
 export default class Storage {
     shapes: Map<any, any>;
-    transformationIterators: Map<any, any>;
-    id: number;
-    compositeId: number;
+    transformationData: Map<any, any>;
     constructor() {
-        this.shapes = new coreJs.Map();
-        this.transformationIterators = new coreJs.Map();
-        this.id = 0;
-        this.compositeId = 0;
-    }
-
-    private incrementId(): void {
-        this.id++;
-    }
-
-    public incrementCompositeId(): void {
-        this.compositeId++;
+        this.shapes = new Map();
+        this.transformationData = new Map();
     }
     
-    public setShape(shape: Shapes): void {
+    public setShape(shapeGeometry: Shape): void {
         
-        this.setShapeId(shape);
+        this.setShapeId(shapeGeometry);
 
-        if (shape.childs) {
-            shape.childs.forEach(function(child: Shapes) {
-                child.id = child.id.split(':')[0] + ':' + shape.id;
+        if (shapeGeometry.children) {
+            shapeGeometry.children.forEach(function(child: Shape) {
+                child.id = child.id.split(':')[0] + ':' + shapeGeometry.id;
             });
         }
 
-        this.shapes.set(shape.id, shape);
-        
-        this.incrementId();
+        this.shapes.set(shapeGeometry.id, shapeGeometry);
     }
     
-    public getShape(shapeId: string): Shapes {
+    public getShape(shapeId: string): Shape {
         return this.shapes.get(shapeId);
     }
     
-    public getShapes(): Map<string, Shapes> {
+    public getShapes(): Map<string, Shape> {
         return this.shapes;
     }
     
-    public getCompositeShape(compositeId: number): Array<Shapes> {
+    public getCompositeShape(compositeId: number): Array<Shape> {
         let shapes = [];
         
-        this.shapes.forEach(function(shape: Shapes): void {
-            if (shape.compositeId && shape.compositeId === compositeId) {
-                shapes.push(shape);
+        this.shapes.forEach(function(shapeGeometry: Shape): void {
+            if (shapeGeometry.compositeId &&
+                shapeGeometry.compositeId === compositeId) {
+                shapes.push(shapeGeometry);
             }
         });
         
         return shapes;
     }
     
-    public resetShape(shapeId: string, newShape: Shapes): void {
+    public resetShape(shapeId: string, newShape: Shape): void {
         this.shapes.set(shapeId, newShape);
     }
     
@@ -68,30 +55,25 @@ export default class Storage {
         this.shapes.delete(shapeId);
     }
     
-    public setTransformationIterator(shapeId: string, iterator: IterableIterator<Float32Array>): void {
-        this.transformationIterators.set(shapeId, iterator);
+    public setTransformationData(
+        shapeId: string, data: {geometry: any, iterator:IterableIterator<Float32Array>}): void {
+        this.transformationData.set(shapeId, data);
     }
 
-    public deleteTransformationIterator(shapeId: string): void {
-        this.transformationIterators.delete(shapeId);
+    public deleteTransformationData(shapeId: string): void {
+        this.transformationData.delete(shapeId);
     }
 
-    public getTransformationIterators(): Map<string, IterableIterator<Float32Array>> {
-        return this.transformationIterators;
+    public getTransformationData(): 
+        Map<string, {geometry: any, iterator: IterableIterator<Float32Array>}> {
+        return this.transformationData;
     }
 
-    public setShapeId(shape: Shapes): void {
-        shape.id = shape.type + '_' + this.id;
-    }
-
-    public setShapeCompositeId(shape: Shapes): void {
-        shape.compositeId = this.compositeId;
+    public setShapeId(shape: Shape): void {
+        shape.id = shape.type + '_' + HELPER.generateUID();
     }
 
     public clearShapes(): void {
-        this.id = 0;
-        this.compositeId = 0;
-
         this.shapes.clear();
     }
 }

@@ -15,7 +15,7 @@ export default class Animation {
 
     animate (callback: Function, stopCondition: Function): void {
         let self = this;
-        
+
         this.parameters ? callback(...this.parameters, self) : callback(self);
 
         this.globalId = requestAnimationFrame(

@@ -2,37 +2,30 @@
  * Created by isp on 5/1/16.
  */
 
-import Interpolation from './interpolation';
-import {SYSTEM_PARAMETERS} from "./../Utils/globals";
-import {Circle, Rectangle, Polygon} from "../Interfaces/shapeInterfaces";
-import {InterpolationParameters} from './../Interfaces/interpolationInterfaces';
+import Interpolation from './Interpolation';
 import {HELPER} from './../Utils/helper';
-
-type Shapes = Circle | Rectangle | Polygon;
 
 export default class LinearInterpolation extends Interpolation {
     frames: number;
-    constructor(shapes: Array<Shapes>, parameters: InterpolationParameters) {
-        super(shapes, parameters);
-
-        if (parameters) {
-            this.frames = parameters.frames || SYSTEM_PARAMETERS. frames;
-        } else {
-            this.frames = SYSTEM_PARAMETERS. frames;
-        }
+    constructor(shapes: Array<any>) {
+        super(shapes);
+        
+        this.frames = shapes[0].advanced.frames;
     }
 
     public iterator(): IterableIterator<Float32Array> {
-        let startPoints = this.sShape.points;
-        let endPoints = this.eShape.points;
+        let startPoints = this.startShape.geometry.points;
+        let endPoints = this.endShape.geometry.points;
         let trajectory = [];
         let params = this.getLinearParameters();
         let curDeltas = HELPER.getVectorsDeltas(startPoints, endPoints);
         let nextDeltas;
         let stopCondition = false;
         let index = 0;
-
         let counter = 0;
+        
+        if (startPoints.length !== endPoints.length)
+            throw new Error('Amount of start and end points should be equal.');
         
         while (!stopCondition) {
             /*let newStartPoints = startPoints.map(function(coord, index) {
@@ -101,35 +94,49 @@ export default class LinearInterpolation extends Interpolation {
         return HELPER.flattenArray(points);
     }
 
-    public getPointsOnVectors (initialPoints: Array<number>,
-                         pointsInVector: Array<number>,
-                               includeInitial?: boolean): Array<number> {
+    public getPointsOnVectors (referencePoints: Array<number>,
+                               pointsInVector: Array<number>,
+                               includeInitial?: boolean,
+                               includeLinkEndsVector?:boolean): Array<number> {
 
-        let isInitial = includeInitial || true;
+        let isInitial = typeof includeInitial === 'undefined' ? true : includeInitial;
         let points = [];
+        let vecA, vecB;
+        let refPoints = referencePoints;
+        let linkEnds = 
+            typeof includeLinkEndsVector === 'undefined' ? true : includeLinkEndsVector;
 
-        for (let i = 0, f = 0; i < initialPoints.length - 2; i += 2, f++) {
+        for (let i = 0, f = 0; i < refPoints.length - 2; i += 2, f++) {
+            vecA = [refPoints[i], refPoints[i+1]];
+            vecB = [refPoints[i+2], refPoints[i+3]];
+
             if (isInitial) {
-                points.push(initialPoints[i]);
-                points.push(initialPoints[i + 1]);
-            }
+                points.push(refPoints[i]);
+                points.push(refPoints[i + 1]);
 
-            let vecA = [initialPoints[i], initialPoints[i+1]];
-            let vecB = [initialPoints[i+2], initialPoints[i+3]];
+                points.push(this.getPointsOnVector(vecA, vecB, pointsInVector[f] - 1));
+            } else {
+                points.push(this.getPointsOnVector(vecA, vecB, pointsInVector[f]));
+            }
             
-            points.push(this.getPointsOnVector(vecA, vecB, pointsInVector[f]));
         }
         
-        points.push(initialPoints[initialPoints.length - 2]);
-        points.push(initialPoints[initialPoints.length - 1]);
+        points.push(refPoints[refPoints.length - 2]);
+        points.push(refPoints[refPoints.length - 1]);
 
-        let vecA = [initialPoints[initialPoints.length - 2], initialPoints[initialPoints.length - 1]];
-        let vecB = [initialPoints[0], initialPoints[1]];
+        vecA = [refPoints[refPoints.length - 2], refPoints[refPoints.length - 1]];
+        vecB = [refPoints[0], refPoints[1]];
 
-        if (!HELPER.isEqualVectors(vecA, vecB)) {
-            points.push(this.getPointsOnVector(vecA, vecB, pointsInVector[pointsInVector.length - 1]));
+        if (!HELPER.isEqualVectors(vecA, vecB) && linkEnds) {
+            if (isInitial) {
+                points.push(this.getPointsOnVector(vecA, vecB,
+                    pointsInVector[pointsInVector.length - 1] - 1));
+            } else {
+                points.push(this.getPointsOnVector(vecA, vecB,
+                    pointsInVector[pointsInVector.length - 1]));
+            }
         }
-
+        
         return  HELPER.flattenArray(points);
     }
 }

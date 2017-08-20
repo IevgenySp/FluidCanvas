@@ -4,27 +4,24 @@
 
 /**
  * General system behaviour parameters
- * @type {{polygons: number, dimentions: number, startFrame: number, frames: number, renderingInterpolationStep: number}}
+ * @type {{polygonsPerShape: number, dimensions: number, startFrame: number, frames: number, interpolationPointsPerSegment: number, isPolygonRender: boolean, drawAsCanvasShape: boolean, bezierSegmentsNumber: number, bezierTension: number, renderPolygonWidth: number, renderPolygonHeight: number, baseShapeColor: string, circleMinStep: number, circleStartAngle: number, lineWidth: number}}
  */
 const SYSTEM_PARAMETERS = {
-   polygons: 50,
-   dimentions: 2,
+   polygonsPerShape: 50,
+   dimensions: 2,
    startFrame: 0,
    frames: 80,
-   interpolationPointsPerSegment: 10
-};
-
-/**
- * Shapes, points, interpolations parameters
- * @type {{polygons: number, bezierSegmentsNumber: number, bezierTension: number, pointWidth: number, pointHeight: number, baseColor: string}}
- */
-const SHAPES_PARAMETERS = {
-   polygons: 50,
+   interpolationPointsPerSegment: 10,
+   isPolygonRender: false,
+   drawAsCanvasShape: true,
    bezierSegmentsNumber: 16,
    bezierTension: 0.5,
-   pointWidth: 4,
-   pointHeight: 4,
-   baseColor: '#000000'
+   renderPolygonWidth: 4,
+   renderPolygonHeight: 4,
+   baseShapeColor: '#000000',
+   circleMinStep: 5,
+   circleStartAngle: 215,
+   lineWidth: 2
 };
 
 /**
@@ -37,7 +34,16 @@ const SHAPES = {
    line:       'line',
    polygon:    'polygon',
    bezierLine: 'bezierLine',
-   composite:  'composite'
+   composite:  'composite',
+   text:       'text'
+};
+
+/**
+ * Predefined polygons shapes types
+ * @type {{star: string}}
+ */
+const POLYGON_SHAPES = {
+   star: 'star'
 };
 
 /**
@@ -45,7 +51,7 @@ const SHAPES = {
  * @type {{point: string, line: string}}
  */
 const RENDER_SHAPES = {
-   point: 'point',
+   polygon: 'polygon',
    line: 'line'
 };
 
@@ -87,4 +93,9 @@ const INTERPOLATION_STEP = {
    time:   'time'
 };
 
-export {SYSTEM_PARAMETERS, INTERPOLATION, SHAPES_PARAMETERS, SHAPES, RENDER_SHAPES, INTERPOLATION_STEP};
+const EVENTS = {
+   onAnimationStart: 'onAnimationStart',
+   onAnimationStop: 'onAnimationStop'
+};
+
+export {SYSTEM_PARAMETERS, INTERPOLATION, SHAPES, POLYGON_SHAPES, RENDER_SHAPES, INTERPOLATION_STEP, EVENTS};

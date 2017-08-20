@@ -4,9 +4,16 @@
     "module": "commonjs",
     "target": "es5",
     "sourceMap": true,
-    "allowJs": true
+    "allowJs": true,
+    "typeRoots": ["node_modules/@types"],
+    "lib": ["es2015", "dom"]
+  },
+  "awesomeTypescriptLoaderOptions": {
+    "useBabel": true
   },
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "distribute",
+    "examples"
   ]
 }

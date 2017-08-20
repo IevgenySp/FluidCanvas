@@ -1,0 +1,24 @@
+{
+  "presets": [
+    ["env", {
+      "targets": {
+        "browsers": [
+          "Chrome >= 49",
+          "ie >= 11",
+          "Firefox >= 45",
+          "Edge >= 14",
+          "Safari >= 9.1",
+          "iOS >= 9",
+          "ChromeAndroid >= 49"
+        ]
+      }
+    }]
+  ],
+  "env": {
+    "test": {
+      "plugins": [
+        "istanbul"
+      ]
+    }
+  }
+}
