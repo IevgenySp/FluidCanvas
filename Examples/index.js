@@ -55,7 +55,7 @@ var rect = {
     y: 50,
     width: 100,
     height: 100,
-    points: [50,50,150,50,150,150,50,150],
+    points: [50,50,150,50,150,150,50,150,50,50],
     advanced: {
         isPolygonRender: false,
         drawAsCanvasShape: false,
@@ -203,7 +203,7 @@ var text6 = {
 };
 
 
-var fluidCanvas = new FluidCanvas(context);
+var fluidCanvas = new FluidCanvas(canvas);
 
 var rectangle = fluidCanvas.shape('rectangle', rect);
 var circle = fluidCanvas.shape('circle', circ);
@@ -508,3 +508,5 @@ setTimeout(reverseLinRender.bind(fluidCanvas, star, line), 11000);
 setTimeout(reverseTriRender.bind(fluidCanvas, line, triangle), 13000);
 setTimeout(flagRender.bind(fluidCanvas, [triangle], usaFlagShapes), 15000);
 setTimeout(flagReverseRender.bind(fluidCanvas, usaFlagShapes, [rectangle, circle, triangle, line, star]), 17000);
+
+//fluidCanvas.animate(rectangle, circle);

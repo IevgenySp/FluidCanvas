@@ -5,37 +5,55 @@ Simple example:
 
 ```javascript
 // Define library
-var fluidCanvas = new FluidCanvas(<context>);
+var fluidCanvas = new FluidCanvas(<canvas>);
 ```
 
 ```javascript
-// Optional: set basic shpaes using constructor
-// Supported shapes types: polygon, line, rectangle, circle, bezier line
-var shapeConstructor = fluidCanvas.getShapesConstructor();
+// Optional: set shape parameters
+var rect = {
+    x: 50,
+    y: 50,
+    width: 100,
+    height: 100,
+    style: {
+        isFill: true,
+        color: '#f78518'
+    }
+};
 ```
 
 ```javascript
-// Basic rectangle
-var shape1 = shapeConstructor.getRectangle(<x>, <y>, <width>, <height>);
+// Basic shape geometry
+var rectangle = fluidCanvas.shape('rectangle', rect);
 ```
 
 ```javascript
-// Basic circle
-var shape2 = shapeConstructor.getCircle(<startAngle>, <radius>, <x>, <y>);
+// Change shape render state and render it
+fluidCanvas.setRenderState(rectangle, true);
+fluidCanvas.render(rectangle);
 ```
 
 ```javascript
-// Add shapes to fluid canvas storage, define shape points geometry
-fluidCanvas.defineShape(shape1);
-fluidCanvas.defineShape(shape2);
+// Define another shape geometry
+var circ = {
+    x: 250,
+    y: 100,
+    r: 50,
+    startAngle: 215,
+    advanced: {
+        isPolygonRender: false,
+        drawAsCanvasShape: true
+    },
+    style: {
+        isFill: true,
+        color: '#1E88E5'
+    }
+};
+
+var circle = fluidCanvas.shape('circle', circ);
 ```
 
 ```javascript
-// Return iterator of shapes transformations arrays, add iterator to storage
-fluidCanvas.transform([shape1], [shape2]);
-```
-
-```javascript
-// Shape transformation animation based on iterator
-fluidCanvas.animate();
+// Transform first shape into second
+fluidCanvas.animate(rectangle, circle);
 ```

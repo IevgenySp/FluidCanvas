@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Echarts</title>
+    <script src="https://cdn.jsdelivr.net/lodash/4.5.1/lodash.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="./../data/USA.js"></script>
+    <link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+<div class="mainWidget">
+    <div id="styleSwitch">
+        <div id="line"><p id="mainLabel">LT</p><p id="secondaryLabel">Line Trend</p></div>
+        <div id="bar"><p id="mainLabel">PB</p><p id="secondaryLabel">Plain Bars</p></div>
+        <div id="map"><p id="mainLabel">US</p><p id="secondaryLabel">US Map</p></div>
+    </div>
+    <div class="widgetContent" id="main">
+        <canvas class="animizer-canvas-main"></canvas>
+    </div>
+</div>
+<script src="./libs/echarts.min.js"></script>
+<script src="../distribute/fcanvas.js"></script>
+<script src="./echartsBarsLines.js"></script>
+</body>
+</html>

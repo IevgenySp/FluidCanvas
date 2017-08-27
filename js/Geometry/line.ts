@@ -120,7 +120,7 @@ export default class LineGeometry {
 
         });
 
-        reversePoints.push(points[0], points[1]);
+        //reversePoints.push(points[0], points[1]);
         
         return reversePoints;
     }

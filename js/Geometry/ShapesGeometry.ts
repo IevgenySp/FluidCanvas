@@ -156,11 +156,17 @@ export default class ShapesGeometry extends ShapesConstructor implements ShapePo
      */
     public convertToPolygon(geometryShape: Shape): Shape {
         let polygonShape;
+        let referencePoints = geometryShape.geometry.referencePoints;
+
+        if (geometryShape.type === SHAPES.line.toUpperCase()) {
+            referencePoints =
+                referencePoints.concat(geometryShape.geometry.reversePoints);
+        }
 
         let polygonObj = {
             type: SHAPES.polygon.toUpperCase(),
             geometry: {
-                referencePoints: geometryShape.geometry.referencePoints,
+                referencePoints: referencePoints,
                 polygons: geometryShape.geometry.polygons
             },
             advanced: _.clone(geometryShape.advanced),
@@ -248,12 +254,12 @@ export default class ShapesGeometry extends ShapesConstructor implements ShapePo
         let transformedShape;
         let normalizedPolygons =
             this.normalizePolygons(startShape, endShape);
-
+        
         startShape.geometry.polygons = normalizedPolygons;
         endShape.geometry.polygons = normalizedPolygons;
         
         this.resetShapesGeometry([startShape, endShape]);
-        
+
         switch (interpolation) {
             default:
             case INTERPOLATION.linear:

@@ -74,11 +74,11 @@ export default class RectangleGeometry {
     
     private referencePoints (): Array<number> {
         let geometry = this.geometry;
-
+        
         if (geometry.referencePoints) {
             if (geometry.referencePoints.length / 2 < this.minPolygons) {
-                throw("Rectangle shape should contain at least" + 
-                    this.minPolygons + "reference points");
+                throw("Rectangle shape should contain at least " +
+                    this.minPolygons + " reference points");
             }
             
             return geometry.referencePoints;

@@ -166,11 +166,12 @@ function getPolygon(type: any, options: any): any {
             throw new Error('Points should be defined for polygon shape');
 
         let polygon: any = {};
+        let uniquePoints =  HELPER.removeDuplicatePairs(options.points);
 
         polygon.type = type.toUpperCase();
         polygon.geometry = {
-            referencePoints: options.points,
-            polygons: options.points.length / 2
+            referencePoints: uniquePoints,
+            polygons: uniquePoints.length / 2
         };
         polygon.isRendered = false;
 

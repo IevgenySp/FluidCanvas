@@ -28,10 +28,10 @@ export default class CompositeGeometry extends ShapesGeometry {
 
         this.checkShapeTextType(startShapes);
         this.checkShapeTextType(endShapes);
-        
+
         let shapesArrRatio = this.shapesArraysRatio(startShapes, endShapes);
         let groupedShapes = this.groupShapes(startShapes, endShapes, shapesArrRatio);
-        
+
         groupedShapes.forEach((groupedShape, index) =>
             this.decompositeShape(groupedShapes[index], shapesArrRatio));
         
@@ -55,14 +55,15 @@ export default class CompositeGeometry extends ShapesGeometry {
             let shapesPolygonsSum = this.groupPolygonsSum(shapesGroup[0]);
             let normalizedPolygons = HELPER.commonMultiple(
                 shapesPolygonsSum, shapesGroup[1][0].geometry.polygons);
-
+            
             shapesGroup[1][0].geometry.polygons = normalizedPolygons;
 
             let transformedShape = this.convertToPolygon(shapesGroup[1][0]);
+
             let shapesNormalizedPolygons =
                 this.normalizeShapesPolygons(shapesPolygons, shapesPolygonsSum,
                     transformedShape.geometry.polygons);
-
+            
             shapesGroup[1] =
                 this.splitShapePolygon(transformedShape, shapesNormalizedPolygons);
 
@@ -71,7 +72,7 @@ export default class CompositeGeometry extends ShapesGeometry {
 
                 return this.convertToPolygon(shape);
             });
-            
+
         } else {
             let shapesPolygons =
                 shapesGroup[1].map((shape) => shape.geometry.polygons);
@@ -88,7 +89,7 @@ export default class CompositeGeometry extends ShapesGeometry {
 
             shapesGroup[0] =
                 this.splitShapePolygon(transformedShape, shapesNormalizedPolygons);
-            
+
             shapesGroup[1] = shapesGroup[1].map((shape, index) => {
                 shape.geometry.polygons = shapesNormalizedPolygons[index];
 
@@ -102,7 +103,6 @@ export default class CompositeGeometry extends ShapesGeometry {
      * Linear method
      * @param polygon
      * @param chunks
-     * @param polygonsSum
      * @returns {Array}
      */
     splitPolygon(polygon: Shape, chunks: Array<number>): Array<Shape> {

@@ -72,11 +72,6 @@ export default class PolygonGeometry {
         return this.referencePoints().length / 2;
     }
 
-    //TODO Implement reset points method
-    private resetPoints() {
-
-    }
-
     public referencePoints(): Array<number> {
         let geometry = this.geometry;
         
@@ -114,7 +109,7 @@ export default class PolygonGeometry {
         }
         
         pointsInVector = HELPER.splitPoints(pointsPerSegment, polygons);
-
+        
         return lInt.getPointsOnVectors(refPoints, pointsInVector);
     }
     

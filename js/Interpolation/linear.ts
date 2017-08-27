@@ -23,7 +23,9 @@ export default class LinearInterpolation extends Interpolation {
         let stopCondition = false;
         let index = 0;
         let counter = 0;
-        
+        //console.log(this.startShape);
+        //console.log(this.endShape);
+
         if (startPoints.length !== endPoints.length)
             throw new Error('Amount of start and end points should be equal.');
         

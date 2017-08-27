@@ -391,6 +391,35 @@ const HELPER = {
         let strTail = ("000" + tail.toString(36)).slice(-3);
         
         return strHead + strTail;
+    },
+
+    /**
+     * Remove all neighbour duplicate pairs of elements from array
+     * @param arr
+     * @returns {Array}
+     */
+    removeDuplicatePairs (arr): Array<number> {
+        var uniquePoints = [];
+
+        for (let i = 0; i < arr.length - 2; i+=2) {
+            let firstPair = [arr[i], [arr[i + 1]]];
+            let secondPair = [arr[i + 2], [arr[i + 3]]];
+
+            if (!_.isEqual(firstPair, secondPair)) {
+                uniquePoints.push(arr[i]);
+                uniquePoints.push(arr[i + 1]);
+            }
+        }
+
+        let startPair = [arr[0], arr[1]];
+        let endPair = [arr[arr.length - 2], arr[arr.length - 1]];
+
+        if (!_.isEqual(startPair, endPair)) {
+            uniquePoints.push(arr[arr.length - 2]);
+            uniquePoints.push(arr[arr.length - 1]);
+        }
+
+        return uniquePoints;
     }
 };
 

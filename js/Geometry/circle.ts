@@ -88,7 +88,7 @@ export default class CircleGeometry {
         
         if (geometry.referencePoints) {
             if (geometry.referencePoints.length / 2 < this.minPolygons) {
-                throw("Circle shape witch current radius should contain at least" + 
+                throw("Circle shape witch current radius should contain at least " +
                         this.minPolygons +  " reference points");
             }
 

@@ -22,9 +22,11 @@ export default class FluidCanvas {
     renderer: any;
     shapesConstructor: any;
     eventEmitter: any;
+    canvas: HTMLCanvasElement;
     context: CanvasRenderingContext2D;
-    constructor (context: CanvasRenderingContext2D) {
-        this.context = context;
+    constructor (canvas: HTMLCanvasElement) {
+        this.canvas = canvas;
+        this.context = canvas.getContext('2d');
         this.storage = new Storage();
         this.geometry = new Geometry();
         this.compositeGeometry = new CompositeGeometry();
@@ -41,7 +43,7 @@ export default class FluidCanvas {
     public shape(type: string, options): any {
         let shape = this.shapesConstructor.defineShape(type, options);
         let geometry = this.geometry.initGeometry(shape);
-
+        
         this.storage.setShape(geometry);
 
         return geometry;
@@ -87,6 +89,7 @@ export default class FluidCanvas {
             this.storage.deleteShape(startGeometry.id);
             this.storage.setTransformationData(transformData.geometry.id, transformData);
         } else {
+
             let transformGroupData =
                 this.compositeGeometry
                     .transformShapes(startGeometry, endGeometry, interpolation);
@@ -174,7 +177,9 @@ export default class FluidCanvas {
             } else {
                 self.storage.deleteTransformationData(key);
 
-                this.eventEmitter.emit(EVENTS.onAnimationStop, shapeGeometry);
+                if (self.storage.transformationData.size === 0) {
+                    this.eventEmitter.emit(EVENTS.onAnimationStop, shapeGeometry);
+                }
 
                 if (!(Array.isArray(endGeometry))) {
                     this.setRenderState(endGeometry, true);
@@ -223,7 +228,7 @@ export default class FluidCanvas {
     /**
      * Render all shapes
      */
-    public renderAll() {
+    public renderAll(): void {
         let shapesIterator = this.getShapes().entries();
         let self = this;
         let nextShape = shapesIterator.next();
@@ -242,8 +247,26 @@ export default class FluidCanvas {
     /**
      * Clear canvas
      */
-    public clear () {
+    public clear (): void {
         this.context.clearRect(0, 0,
             this.context.canvas.width, this.context.canvas.height);
+    }
+
+    /**
+     * Subscribe on animation events
+     * @param event
+     * @param callback
+     */
+    public on(event, callback): void {
+        this.eventEmitter.on(event, callback);
+    }
+
+    /**
+     * Subscribe once on animation events
+     * @param event
+     * @param callback
+     */
+    public once(event, callback): void {
+        this.eventEmitter.once(event, callback);
     }
 }
