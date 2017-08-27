@@ -1,7 +1,7 @@
 # FluidCanvas
 Dynamic Canvas transformations
 
-![Alt Text](https://github.com/IevgenySp/FluidCanvas/blob/master/assets/Trransformations.gif)
+![Alt Text](https://github.com/IevgenySp/FluidCanvas/blob/master/assets/Transformations.gif)
 
 Simple example:
 
