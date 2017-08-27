@@ -1,6 +1,8 @@
 # FluidCanvas
 Dynamic Canvas transformations
 
+![alt tag](FluidCanvas/assets/Transformations.gif)
+
 Simple example:
 
 ```javascript
