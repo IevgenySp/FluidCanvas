@@ -2,24 +2,327 @@
  * Created by isp on 8/20/17.
  */
 
-var myChart = echarts.init(document.getElementById('main'));
-var styleSwitchLineButton = document.getElementById('line');
-var styleSwitchBarButton = document.getElementById('bar');
-var styleSwitchUsMapButton = document.getElementById('map');
+module.exports = class EchartsFluidCanvas {
+    constructor(container) {
+        this.container = container;
+        this.chart = echarts.init(container);
 
-var canvasEl = document.createElement("CANVAS");
-canvasEl.setAttribute("id", "animationLayer");
-canvasEl.setAttribute("class", "animizer-canvas-main");
-document.getElementById("main").appendChild(canvasEl);
+        let canvasEl = document.createElement("CANVAS");
+        canvasEl.setAttribute("id", "animationLayer");
+        canvasEl.setAttribute("class", "animizer-canvas-main");
 
-var fluidCanvas = new FluidCanvas(canvasEl);
-var currentChart = 'bar';
-var usaData = USA;
+        this.container.appendChild(canvasEl);
+        this.fluidCanvas = new FluidCanvas(canvasEl);
+        this.canvas = this.createHiDPICanvas(this.chart.getWidth(), this.chart.getHeight());
+        this.context = this.canvas.getContext('2d');
+
+        this.chartType = {
+            bar: 'bar',
+            line: 'line',
+            map: 'map'
+        };
+        
+        this.usaData = USA;
+
+        this.bars = this.getBars();
+        this.lines = this.getLines();
+        this.map = this.getMap();
+    }
+
+    createHiDPICanvas(w, h, ratio) {
+        let PIXEL_RATIO = (() => {
+            let ctx = document.createElement("canvas").getContext("2d"),
+                dpr = window.devicePixelRatio || 1,
+                bsr = ctx.webkitBackingStorePixelRatio ||
+                    ctx.mozBackingStorePixelRatio ||
+                    ctx.msBackingStorePixelRatio ||
+                    ctx.oBackingStorePixelRatio ||
+                    ctx.backingStorePixelRatio || 1;
+
+            return dpr / bsr;
+        })();
+
+        if (!ratio) { ratio = PIXEL_RATIO; }
+        let can = document.getElementsByClassName("animizer-canvas-main")[0];
+
+        can.width = w * ratio;
+        can.height = h * ratio;
+        can.style.width = w + "px";
+        can.style.height = h + "px";
+        can.getContext("2d").setTransform(ratio, 0, 0, ratio, 0, 0);
+
+        return can;
+    }
+
+    drawChart(type) {
+        switch (type) {
+            case this.chartType.bar:
+                this.chart.setOption(this.bars, { notMerge: true });
+                break;
+            case this.chartType.line:
+                this.chart.setOption(this.lines, { notMerge: true });
+                break;
+            case this.chartType.map:
+                this.chart.setOption(this.map, { notMerge: true });
+                break;
+            default:
+                this.chart.setOption(this.bars, { notMerge: true });
+        }
+    }
+
+    setData(data) {
+        this.bars.series[0].data = data;
+
+        this.bars.xAxis.data = data.map((item, index) => {
+            return 'Item_' + index;
+        });
+    }
+
+    getBars() {
+        return {
+            title: {
+                text: 'Fluid Canvas Charts transformation',
+                textStyle: {
+                    color: '#ffffff',
+                    fontFamily: 'MuseoSansLight',
+                    fontSize: 14
+                }
+            },
+            tooltip: {},
+            legend: {
+                data:['Sales'],
+                textStyle: {
+                    color: "#fff"
+                },
+                inactiveColor: '#ccc'
+            },
+            xAxis: {
+                data: ["shirt","cardign","chiffon shirt","pants","heels","socks"],
+                axisLine: {
+                    lineStyle: {
+                        color: '#ffffff'
+                    }
+                }
+            },
+            yAxis: {
+                axisLine: {
+                    lineStyle: {
+                        color: '#ffffff'
+                    }
+                }
+            },
+            series: [{
+                name: 'Sales',
+                type: 'bar',
+                data: [5, 20, 36, 10, 10, 20],
+                itemStyle: {
+                    normal: {
+                        color: 'rgba(247, 133, 24, 1)'
+                    }
+                }
+            }]
+        };
+    }
+
+    getLines() {
+        return {
+            title: {
+                text: 'Fluid Canvas Charts transformation',
+                textStyle: {
+                    color: '#ffffff',
+                    fontFamily: 'MuseoSansLight',
+                    fontSize: 14
+                }
+            },
+            tooltip: {},
+            legend: {
+                data:['Sales'],
+                textStyle: {
+                    color: "#fff"
+                },
+                inactiveColor: '#ccc'
+            },
+            xAxis: {
+                data: ["shirt","cardign","chiffon shirt","pants","heels","socks"],
+                axisLine: {
+                    lineStyle: {
+                        color: '#ffffff'
+                    }
+                }
+            },
+            yAxis: {
+                axisLine: {
+                    lineStyle: {
+                        color: '#ffffff'
+                    }
+                }
+            },
+            series: [
+                {
+                    name: 'Sales',
+                    type: 'line',
+                    itemStyle: {
+                        normal: {
+                            color: 'rgba(30, 136, 229, 1)'
+                        }
+                    },
+                    data: [5, 20, 36, 10, 10, 20],
+                    showSymbol: true
+                }
+            ],
+            animation: true
+        };
+    }
+    
+    getMap() {
+        echarts.registerMap('USA', this.usaData, {
+            Alaska: {
+                left: -131,
+                top: 25,
+                width: 15
+            },
+            Hawaii: {
+                left: -110,
+                top: 28,
+                width: 5
+            },
+            'Puerto Rico': {
+                left: -76,
+                top: 26,
+                width: 2
+            }
+        });
+
+        return {
+            title: {
+                text: 'USA Population Estimates (2012)',
+                subtext: 'Data from www.census.gov',
+                sublink: './../data/USA.json',
+                left: 'right'
+            },
+            tooltip: {
+                trigger: 'item',
+                showDelay: 0,
+                transitionDuration: 0.2,
+                formatter: function (params) {
+                    var value = (params.value + '').split('.');
+                    value = value[0].replace(/(\d{1,3})(?=(?:\d{3})+(?!\d))/g, '$1,');
+                    return params.seriesName + '<br/>' + params.name + ': ' + value;
+                }
+            },
+            visualMap: {
+                left: 'right',
+                min: 500000,
+                max: 38000000,
+                inRange: {
+                    color: ['#313695', '#4575b4', '#74add1', '#abd9e9', '#e0f3f8', '#ffffbf', '#fee090', '#fdae61', '#f46d43', '#d73027', '#a50026']
+                },
+                text:['High','Low'],
+                calculable: true
+            },
+            toolbox: {
+                show: true,
+                //orient: 'vertical',
+                left: 'left',
+                top: 'top',
+                feature: {
+                    dataView: {readOnly: false},
+                    restore: {},
+                    saveAsImage: {}
+                }
+            },
+            series: [
+                {
+                    name: 'USA PopEstimates',
+                    type: 'map',
+                    roam: true,
+                    map: 'USA',
+                    itemStyle:{
+                        emphasis:{label:{show:true}}
+                    },
+                    textFixed: {
+                        Alaska: [20, -20]
+                    },
+                    data:[
+                        {name: 'Alabama', value: 4822023},
+                        {name: 'Alaska', value: 731449},
+                        {name: 'Arizona', value: 6553255},
+                        {name: 'Arkansas', value: 2949131},
+                        {name: 'California', value: 38041430},
+                        {name: 'Colorado', value: 5187582},
+                        {name: 'Connecticut', value: 3590347},
+                        {name: 'Delaware', value: 917092},
+                        {name: 'District of Columbia', value: 632323},
+                        {name: 'Florida', value: 19317568},
+                        {name: 'Georgia', value: 9919945},
+                        {name: 'Hawaii', value: 1392313},
+                        {name: 'Idaho', value: 1595728},
+                        {name: 'Illinois', value: 12875255},
+                        {name: 'Indiana', value: 6537334},
+                        {name: 'Iowa', value: 3074186},
+                        {name: 'Kansas', value: 2885905},
+                        {name: 'Kentucky', value: 4380415},
+                        {name: 'Louisiana', value: 4601893},
+                        {name: 'Maine', value: 1329192},
+                        {name: 'Maryland', value: 5884563},
+                        {name: 'Massachusetts', value: 6646144},
+                        {name: 'Michigan', value: 9883360},
+                        {name: 'Minnesota', value: 5379139},
+                        {name: 'Mississippi', value: 2984926},
+                        {name: 'Missouri', value: 6021988},
+                        {name: 'Montana', value: 1005141},
+                        {name: 'Nebraska', value: 1855525},
+                        {name: 'Nevada', value: 2758931},
+                        {name: 'New Hampshire', value: 1320718},
+                        {name: 'New Jersey', value: 8864590},
+                        {name: 'New Mexico', value: 2085538},
+                        {name: 'New York', value: 19570261},
+                        {name: 'North Carolina', value: 9752073},
+                        {name: 'North Dakota', value: 699628},
+                        {name: 'Ohio', value: 11544225},
+                        {name: 'Oklahoma', value: 3814820},
+                        {name: 'Oregon', value: 3899353},
+                        {name: 'Pennsylvania', value: 12763536},
+                        {name: 'Rhode Island', value: 1050292},
+                        {name: 'South Carolina', value: 4723723},
+                        {name: 'South Dakota', value: 833354},
+                        {name: 'Tennessee', value: 6456243},
+                        {name: 'Texas', value: 26059203},
+                        {name: 'Utah', value: 2855287},
+                        {name: 'Vermont', value: 626011},
+                        {name: 'Virginia', value: 8185867},
+                        {name: 'Washington', value: 6897012},
+                        {name: 'West Virginia', value: 1855413},
+                        {name: 'Wisconsin', value: 5726398},
+                        {name: 'Wyoming', value: 576412},
+                        {name: 'Puerto Rico', value: 3667084}
+                    ]
+                }
+            ]
+        };
+    }
+
+    //let chart = echarts.init(container);
+};
+
+//var myChart = echarts.init(document.getElementById('main'));
+//var styleSwitchLineButton = document.getElementById('line');
+//var styleSwitchBarButton = document.getElementById('bar');
+//var styleSwitchUsMapButton = document.getElementById('map');
+
+//var canvasEl = document.createElement("CANVAS");
+//canvasEl.setAttribute("id", "animationLayer");
+//canvasEl.setAttribute("class", "animizer-canvas-main");
+//document.getElementById("main").appendChild(canvasEl);
+
+//var fluidCanvas = new FluidCanvas(canvasEl);
+//var currentChart = 'bar';
+//var usaData = USA;
 
 /**
  * Adaptation for retina display
  */
-var PIXEL_RATIO = (function () {
+/*var PIXEL_RATIO = (function () {
     var ctx = document.createElement("canvas").getContext("2d"),
         dpr = window.devicePixelRatio || 1,
         bsr = ctx.webkitBackingStorePixelRatio ||
@@ -40,12 +343,12 @@ createHiDPICanvas = function(w, h, ratio) {
     can.style.height = h + "px";
     can.getContext("2d").setTransform(ratio, 0, 0, ratio, 0, 0);
     return can;
-};
+};*/
 
-var canvas = createHiDPICanvas(myChart.getWidth(), myChart.getHeight());
-var context = canvas.getContext('2d');
+/*var canvas = createHiDPICanvas(myChart.getWidth(), myChart.getHeight());
+var context = canvas.getContext('2d');*/
 
-var bars = {
+/*var bars = {
     title: {
         text: 'Fluid Canvas Bars-Lines transformation',
         textStyle: {
@@ -365,7 +668,7 @@ var lineGeometries = getShapeGeometry('line', lineShapes);
 
 function getEchartsParams(shapeType) {
     var paramsArr = [];
-    var shaes = shapeType !== 'usMap' ?
+    var shapes = shapeType !== 'usMap' ?
         myChart._chartsViews[0]._data._itemLayouts :
         myChart._chartsViews[0].group.__storage._displayList;
 
@@ -520,4 +823,4 @@ fluidCanvas.on('onAnimationStop', function() {
 
 styleSwitchLineButton.addEventListener("click", function() { animate('line')} );
 styleSwitchBarButton.addEventListener("click", function() { animate('bar')} );
-styleSwitchUsMapButton.addEventListener("click", function() { animate('usMap')} );
+styleSwitchUsMapButton.addEventListener("click", function() { animate('usMap')} );*/

@@ -1,0 +1,22 @@
+@font-face {
+    font-family: "MuseoSansLight";
+    src: url("../../fonts/MuseoSansLight/MuseoSansLight.eot");
+    src: url("../../fonts/MuseoSansLight/MuseoSansLight.eot?#iefix") format("embedded-opentype"),
+    url("../../fonts/MuseoSansLight/MuseoSansLight.woff") format("woff"),
+    url("../../fonts/MuseoSansLight/MuseoSansLight.ttf") format("truetype");
+    font-style: normal;
+    font-weight: normal;
+}
+
+body {
+    background: #0e1932;
+}
+
+div.react-grid-item {
+    /*background: #3875e1;*/
+    border: 1px solid #192f61;
+    color: #fff;
+    font-family: MuseoSansLight, sans-serif;
+    text-transform: uppercase;
+    font-size: 11px;
+}
